@@ -1,0 +1,104 @@
+(view Oid from TRIV to CONFIGURATION is
+    sort Elt to Oid .
+endv)
+
+(mod RANDOMIZER is
+    pr RANDOM .
+
+    var X : Nat .
+    
+    op randomdigit : Nat -> Nat .
+    eq [randomdigit] : randomdigit(X) = random(X) rem 10 .
+endm)
+
+(omod STOCK-EXCHANGE is 
+    pr INT + QID . 
+    pr RANDOMIZER .
+    pr LIST{Oid} .
+    subsort Qid < Oid .
+
+    class Trader | broker : Oid, capital : Int, leverage : Int, equity : Int,suspended : Bool .
+    class Broker | balance : Int, commission : Int, stocks : List{Oid}, round : Nat .
+    class Stock | price : Int .
+    class Order | trader : Oid, stock : Oid, limit : Int, profit-target : Int, stop-loss : Int, active : Bool .
+    class PreferredTrader .
+    subclass PreferredTrader < Trader .
+    class Long . class Short .
+    subclasses Long Short < Order .
+
+    vars B B' T T' S S' O O2 : Oid .
+    vars P DH DL C Lev E NewC NewE L L2 PT SL Bal Com : Int .
+    var R : Nat .
+    var OidL Stks : List{Oid} .
+    var A : Bool . 
+
+    msg updateStockPrices : Nat List{Oid} -> Msg .
+    eq [updateStockPrices] : updateStockPrices(R, S OidL) < S : Stock | price : P > = 
+        if (randomdigit(R * P) rem 2) == 0 
+        then updateStockPrices(R, OidL) < S : Stock | price : P + randomdigit(R * P) > updateTraderEquity(S)
+        else updateStockPrices(R, OidL) < S : Stock | price : P - randomdigit(R * P) > updateTraderEquity(S)
+        fi .
+    
+    eq [updateStockPricesOwise] : updateStockPrices(R, nil) = none [owise] .
+ 
+    msg updateTraderEquity : Oid -> Msg .
+    eq [updateTraderEquity] : 
+        updateTraderEquity(S) 
+        < S : Stock | price : P > 
+        < O : Order | stock : S , trader : T , limit : L , active : true > 
+        < T : Trader | capital : C , equity : E , leverage : Lev > 
+        =
+        < S : Stock | price : P > 
+        < O : Order | stock : S , trader : T , limit : L , active : true >
+        < T : Trader | capital : C , equity : E + (P - L) > .
+   
+    eq [updateTraderEquityOwise] : 
+        updateTraderEquity(S) 
+        < S : Stock | price : P > 
+        < O : Order | stock : S' , trader : T' , limit : L , active : A >
+        < T : Trader | capital : C , equity : E >
+        =
+        < S : Stock | price : P > 
+        < O : Order | stock : S' , trader : T' , limit : L , active : A >
+        < T : Trader | capital : C , equity : E > [owise] .
+
+    rl [next-round] : 
+        < B : Broker | round : R , stocks : Stks > 
+        => 
+        < B : Broker | round : R + 1 , stocks : Stks > 
+        updateStockPrices(R, Stks) .
+
+    crl [activate-order] : 
+        < B : Broker | balance : Bal , commission : Com >
+        < T : Trader | broker : B , capital : C , equity : E , leverage : Lev >
+        < S : Stock | price : P >
+        < O : Order | stock : S , trader : T , limit : P , active : false >  
+        =>
+        < B : Broker | balance : Bal + Com , commission : Com >
+        < T : Trader | broker : B , capital : NewC , equity : E + (NewC - C) , leverage : Lev >
+        < S : Stock | price : P > 
+        < O : Order | stock : S , trader : T , limit : P , active : true >
+        if NewC := if ((P + Com) < C) then C - P - Com else (((C * Lev) - P) quo Lev) - Com fi .
+
+    crl [close-order-SL] : 
+        < B : Broker | balance : Bal , commission : Com >
+        < T : Trader | broker : B , capital : C , equity : E >
+        < S : Stock | price : P >
+        < O : Order | stock : S , trader : T , limit : L , stop-loss : SL , active : true >  
+        =>
+        < B : Broker | balance : Bal + Com , commission : Com >
+        < T : Trader | broker : B , capital : (C + L) - SL - Com , equity : (E + L) - Com >
+        < S : Stock | price : P > 
+        if P <= (L - SL) .
+ 
+    crl [close-order-PT] : 
+        < B : Broker | balance : Bal , commission : Com >
+        < T : Trader | broker : B , capital : C , equity : E >
+        < S : Stock | price : P >
+        < O : Order | stock : S , trader : T , limit : L , profit-target : PT , active : true >  
+        =>
+        < B : Broker | balance : Bal + Com , commission : Com >
+        < T : Trader | broker : B , capital : (C + L + PT) - Com , equity : (E + L) - Com >
+        < S : Stock | price : P > 
+        if P >= (L + PT) .
+endom)

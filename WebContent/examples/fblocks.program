@@ -1,0 +1,22 @@
+mod BLOCKS-WORLD is inc INT .
+  sorts Block Prop State .
+  subsort Prop < State .
+  ops a b c : -> Block .
+  op table : Block -> Prop . *** block is on the table
+  op on : Block Block -> Prop . *** block A is on block B
+  op clear : Block -> Prop . *** block is clear
+  op hold : Block -> Prop . *** robot arm holds the block
+  op empty : -> Prop . *** robot arm is empty
+  op _&_ : State State -> State [assoc comm] .
+  op size : Block -> Nat .
+  vars X Y : Block .
+
+  eq [sizeA] : size(a) = 1 .
+  eq [sizeB] : size(b) = 2 .
+  eq [sizeC] : size(c) = 3 .
+
+  rl [pickup] : clear(X) & table(X) => hold(X) .
+  rl [putdown] : hold(X) => empty & clear(X) & table(X) .
+  rl [unstack] : empty & clear(X) & on(X,Y) => hold(X) & clear(Y) .
+  crl [stack] : hold(X) & clear(Y) => empty & clear(X) & on(X,Y) if size(X) < size(Y) .
+endm

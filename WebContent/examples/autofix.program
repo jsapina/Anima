@@ -1,0 +1,32 @@
+mod CONTAINER is 
+  inc INT .
+  protecting QID .
+  sorts Container Prop State .
+  subsort Prop < State .
+  op <_,_> : Qid Int -> Container .
+  op ground : Container -> Prop . 
+  op on : Container Container -> Prop . 
+  op clear : Container -> Prop .
+  op hold : Container -> Prop . 
+  op empty : -> Prop .
+  op _&_ : State State -> State [assoc comm] .
+  op load : Container -> Container .
+  op unload : Container -> Container .
+  op w : Container -> Int .
+   
+  vars X Y Z : Container .
+  var ID : Qid .
+  var W : Int .
+
+  
+  eq load(< ID , W >) = < ID, W + 1 > .
+  eq unload(< ID , W >) = < ID, W - 1 > . 
+  eq w(< ID , W >) = W .
+  
+  rl [pickup] : empty & clear(X) & ground(X) => hold(X) .
+  rl [load] : clear(X) & ground(X) => clear(X) & ground(load(X)) .
+  rl [putdown] : hold(X) => empty & clear(X) & ground(X) .
+  rl [unload] : clear(X) & ground(X) => clear(unload(X)) & ground(unload(X)) .
+  rl [unstack] : clear(X) & on(X,Y) => hold(X) & clear(Y) .
+  crl [stack] : hold(X) & clear(Y) => empty & clear(X) & on(X,Y) if w(X) < w(Y) .
+endm

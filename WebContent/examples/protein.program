@@ -1,0 +1,456 @@
+fmod PROTEIN is pr NAT .
+inc META-LEVEL .
+
+  sorts AminoAcid Protein .
+  subsort AminoAcid < Protein . 
+  
+  ops T Y S K P N : -> AminoAcid . 
+  ops pT pY pS : -> AminoAcid .  
+ 
+endfm 
+
+fmod THING is pr PROTEIN .
+inc META-LEVEL .
+
+sort Thing Family Composite DNA Complex Chemical Signature Stimulus .
+subsorts Protein Family Composite DNA Complex Chemical Signature 
+         Stimulus < Thing .
+
+  op (_:_) : Thing Thing -> Complex [assoc comm] .           
+
+
+  op reduce : Complex -> Complex .
+  eq [reduce546] : reduce((T1:Thing : T2:Thing)) = (T1:Thing : T2:Thing) . 
+
+
+endfm
+
+
+fmod SOUP is pr THING .
+inc META-LEVEL .
+
+  sort Soup .
+  subsort Thing < Soup .
+  op empty : -> Soup .
+  op __ : Soup Soup -> Soup [assoc comm id: empty ] .
+
+  ---vars SVar : Soup .
+  ---eq SVar empty = SVar .
+  ---eq empty SVar = SVar .
+
+  op _has_ : Soup Thing -> Bool .
+
+  ceq [r2152a] : (T1:Thing S:Soup ) has T2:Thing = true if T1:Thing == T2:Thing .
+  ceq [r2152b] : (T1:Thing S:Soup ) has T2:Thing = S:Soup has T2:Thing if T1:Thing =/= T2:Thing .
+  eq [r2654] : (S:Soup has T:Thing) =  false [owise] .
+
+  op # : Nat Thing -> Soup .
+  eq [r3456] : #((s N:Nat),T:Thing) = T:Thing #(N:Nat,T:Thing) .
+  eq [r3256] : #(0,T:Thing) = empty .
+
+  op <_> : Soup -> Complex .  
+  op reduceS : Soup -> Soup .
+  eq [reduceS1] : reduceS(T:Thing T:Thing S:Soup) =  reduceS(T:Thing S:Soup) .
+  eq [reduceS2] : reduceS(S:Soup) = S:Soup [owise] .
+
+  eq [reduce] : reduce(< s:Soup >) = < reduceS(s:Soup) > .
+
+endfm
+
+
+fmod MODIFICATION is pr SOUP .  
+inc META-LEVEL .
+ 
+  sorts Site Modification ModSet .
+  subsort Modification < ModSet . 
+
+  op acetyl : -> Modification . 
+  op acetyl : Site -> Modification . 
+  op act : -> Modification .
+  op act1 : -> Modification .
+  op act2 : -> Modification .
+  op act3 : -> Modification .
+  op bound :      -> Modification .
+  op bound : Site -> Modification .
+  op deact : -> Modification .
+  op degraded : -> Modification .
+
+  op dim       : -> Modification .
+  op disrupted : -> Modification .
+  op downreg : -> Modification .
+  op hydrox : -> Modification .
+  op hydrox : Site -> Modification .
+  op inhib : -> Modification .  
+  op mem  : -> Modification .  
+  op mito : -> Modification .  
+  op nm : Site    -> Modification .
+  op notthere : -> Modification .
+  op out : -> Modification .
+  op phos :       -> Modification .
+  op phos : Site  -> Modification .
+  op phosbound : Site -> Modification .
+  op pro : -> Modification .         
+  op reloc : -> Modification .         
+  op Sphos : -> Modification .
+  op STphos : -> Modification . 
+  op STphos1 : -> Modification .
+  op STphos2 : -> Modification .
+  op Tphos : -> Modification .
+  op trunc : -> Modification .  
+  op ubiq : -> Modification .
+  op Yphos : -> Modification . 
+  ops GTP GDP : -> Modification .    
+  ops GTP GDP : Site -> Modification .
+  ops mono poly : -> Modification . 
+  ops on off : -> Modification .
+  ops open closed : -> Modification .
+  ops ox red    : -> Modification .  
+  ops new : -> Modification .
+ 
+  op num : Nat -> Modification .
+   
+  op none : -> ModSet . 
+  op __ : ModSet ModSet -> ModSet [assoc comm id: none] . 
+  op __ : AminoAcid Nat -> Site .
+
+  op _contains_ : ModSet Modification -> Bool .
+  var M M' : Modification .
+  var MS : ModSet .
+
+  eq [e2384] : none contains M' = false .
+  ceq [e9573a] : (M MS) contains M' = true if M == M' .
+  ceq [e9573b] : (M MS) contains M' = MS contains M' if M =/= M' .
+
+  op [_-_] : Protein   ModSet -> Protein   . 
+  op [_-_] : Family    ModSet -> Family   . 
+  op [_-_] : Composite ModSet -> Composite   . 
+  op [_-_] : DNA       ModSet -> DNA       . 
+  op [_-_] : Chemical  ModSet -> Chemical  . 
+
+
+  var Ptin : Protein .
+  var Fmly : Family .
+  var Cmsite : Composite .
+  var DnaVar : DNA .
+  var Cmcal : Chemical .
+
+  eq [e2322n] : [Ptin - none] = Ptin .
+  eq [e2556v] : [Fmly - none] = Fmly .
+  eq [e2557e] : [Cmsite - none] = Cmsite .
+  eq [e2792d] : [DnaVar - none] = DnaVar .
+  eq [e2422c] : [Cmcal - none] = Cmcal .
+
+endfm
+
+
+fmod LOCATION is inc MODIFICATION .
+inc META-LEVEL .
+
+sort Location LocName .
+subsort Location < Soup . 
+op {_|_} : LocName Soup -> Location [format (n d d t d d)] .
+
+ops CLo CLm CLi CLc : -> LocName . 
+ops NUo NUm NUi NUc : -> LocName .  
+ops MOo MOm MOi MOc : -> LocName .  
+ops MIo MIm MIi MIc : -> LocName .  
+ops ERo ERm ERi ERc : -> LocName .  
+ops PXo PXm PXi PXc : -> LocName .  
+ops GAo GAm GAi GAc : -> LocName .  
+ops LEo LEm LEi LEc : -> LocName .  
+ops EEo EEm EEi EEc : -> LocName .  
+ops LYo LYm LYi LYc : -> LocName . 
+ops CPo CPm CPi CPc : -> LocName .  
+op  PTc             : -> LocName .  
+op  Sig             : -> LocName .  
+
+
+
+
+
+endfm
+
+
+fmod CELL is inc LOCATION .
+inc META-LEVEL .
+
+sort Cell CellType .
+subsort Cell < Soup .
+
+op [_|_] : CellType Soup -> Cell .
+
+op Cell : -> CellType .
+op EpithelialCell : -> CellType .
+op EverythingCell : -> CellType .
+op Fibroblast : -> CellType .
+op HMEC : -> CellType .
+op LiverCell : -> CellType .
+op Macrophage : -> CellType .
+op MuscleCell : -> CellType .
+
+endfm
+
+
+fmod DISH is inc CELL .
+inc META-LEVEL .
+
+sort Dish .
+op PD : Soup -> Dish .
+
+endfm
+
+
+
+fmod THEOPS is inc DISH . 
+inc META-LEVEL . endfm 
+
+
+
+fmod PROTEINOPS is inc DISH .
+inc META-LEVEL .
+**** inc DOMAIN .
+
+
+
+sort ErbB1L .    
+subsort ErbB1L < Protein .
+
+op 1433x1 : -> Protein . 
+
+op Cbl : -> Protein .
+
+op DAG : -> Chemical .
+
+op Egf : -> ErbB1L .
+
+op EgfR : -> Protein .
+
+op ErbB2 : -> Protein .
+
+op Gab1   : -> Protein .
+
+op Grb2 : -> Protein .
+
+op Hras : -> Protein .
+
+op IP3 : -> Chemical .
+
+op Pak1 : -> Protein .
+
+op Pi3k : -> Composite . 
+
+op PIP2 : -> Chemical .
+
+op PIP3 : -> Chemical .
+
+sort Plc .
+subsort Plc < Protein .
+
+op Plcg : -> Plc .  
+  op Plcg1 : -> Protein .
+  op Plcg2 : -> Protein .
+
+op PP2a : -> Composite .
+
+op Raf1 : -> Protein .
+
+op Shc : -> Protein .
+
+op Sos1  : -> Protein .
+
+op Src : -> Protein .
+
+op Tgfa   : -> ErbB1L .
+
+op Ube2l3 : -> Protein .
+
+op Vav2 : -> Protein .
+
+
+endfm
+
+mod ALLBP is inc PROTEINOPS .
+inc META-LEVEL .
+
+var  cell : CellType .
+vars clo clm cli clc nuo num nui nuc : Soup .
+vars moo mom moi moc mio mim mii mic : Soup .
+vars ero erm eri erc pxo pxm pxi pxc : Soup .
+vars gao gam gai gac lyo lym lyi lyc : Soup .
+vars eeo eem eei eec leo lem lei lec : Soup .
+vars cpo cpm cpi cpc ct ptc sig : Soup .
+var ms : ModSet .
+
+rl [1.EgfR.act] :
+  ?ErbB1L:ErbB1L
+  [CellType:CellType | ct
+  {CLm | clm EgfR                     } ]
+  =>
+  [CellType:CellType | ct
+  {CLm | clm ([EgfR - act] : ?ErbB1L:ErbB1L)} ] .
+
+
+
+
+rl [2.EgfR.ubiq] :
+  {CLm | clm ([EgfR - act] : ?ErbB1L:ErbB1L) }
+  {CLi | cli [Cbl - Yphos] [Ube2l3 - ubiq] }
+  =>
+  {CLm | clm ([EgfR - ubiq] : ?ErbB1L:ErbB1L) }
+  {CLi | cli [Cbl - Yphos]  Ube2l3         } .
+
+
+
+
+rl [4.Gab1.Yphosed] :
+  {CLm | clm ([EgfR - act] : ?ErbB1L:ErbB1L) }
+  {CLi | cli [Grb2 - reloc]                }
+  {CLc | clc Gab1                          }
+  =>
+  {CLm | clm ([EgfR - act] : ?ErbB1L:ErbB1L) }
+  {CLi | cli [Grb2 - reloc] [Gab1 - Yphos] }
+  {CLc | clc                               } .
+
+
+
+rl [5.Grb2.reloc] :
+  {CLm | clm ([EgfR - act] : ?ErbB1L:ErbB1L)  }
+  {CLi | cli                   }
+  {CLc | clc Grb2              } 
+  =>
+  {CLm | clm ([EgfR - act] : ?ErbB1L:ErbB1L) }
+  {CLi | cli [Grb2 - reloc]    }
+  {CLc | clc                   } .
+
+
+
+rl [6.Hras.act.1] :
+  {CLm | clm PIP3                                       }         
+  {CLi | cli [Grb2 - reloc] [Sos1 - reloc] [Hras - GDP] }
+  =>
+  {CLm | clm PIP3                                       }         
+  {CLi | cli [Grb2 - reloc] [Sos1 - reloc] [Hras - GTP] } .
+
+
+
+rl [7.IP3.from.PIP2.by.Plc] :
+  {CLm | clm PIP2             }
+  {CLi | cli [?Plc:Plc - act] }
+  {CLc | clc                  }
+  =>
+  {CLm | clm DAG              }
+  {CLi | cli [?Plc:Plc - act] } 
+  {CLc | clc IP3              } .
+
+
+rl [8.Pi3k.act] :
+  {CLi | cli [Gab1 - Yphos]              }
+  {CLc | clc Pi3k                        }
+  =>
+  {CLi | cli [Gab1 - Yphos] [Pi3k - act] }
+  {CLc | clc                             } .
+
+
+
+rl [9.PIP3.from.PIP2.by.Pi3k] :
+  {CLm | clm  PIP2        }
+  {CLi | cli [Pi3k - act] }
+  =>
+  {CLm | clm  PIP3        }
+  {CLi | cli [Pi3k - act] } .
+
+
+
+rl [10.Plcg.act] :
+  {CLm | clm ([EgfR - act] : ?ErbB1L:ErbB1L) PIP3 }
+  {CLi | cli Src               }
+  {CLc | clc Plcg              }
+  =>
+  {CLm | clm ([EgfR - act] : ?ErbB1L:ErbB1L) PIP3 }
+  {CLi | cli Src [Plcg - act]  }
+  {CLc | clc                   } .
+
+
+
+rl [11.Shc.Yphosed] :
+  {CLm | clm ([EgfR - act] : ?ErbB1L:ErbB1L) }
+  {CLi | cli Src               }
+  {CLc | clc Shc               }
+  =>
+  {CLm | clm ([EgfR - act] : ?ErbB1L:ErbB1L) }
+  {CLi | cli Src [Shc - Yphos] }
+  {CLc | clc                   } .
+
+
+
+rl [12.Sos1.reinit] :
+  {CLm | clm ([EgfR - act] : ?ErbB1L:ErbB1L)  }
+  {CLi | cli [Grb2 - reloc] [Sos1 - reloc]  }
+  {CLc | clc                                } 
+  =>
+  {CLm | clm ([EgfR - act] : ?ErbB1L:ErbB1L)  }
+  {CLi | cli [Grb2 - Yphos]           }
+  {CLc | clc  Sos1                          } .
+
+
+
+rl [13.Sos1.reloc] :
+  {CLi | cli [Grb2 - reloc]                }
+  {CLc | clc Sos1                          }
+  =>
+  {CLi | cli [Grb2 - reloc] [Sos1 - reloc] }
+  {CLc | clc                               } .
+
+
+
+rl [15.Cbl.reloc.Yphos] :
+  {CLm | clm ([EgfR - act] : ?ErbB1L:ErbB1L) }
+  {CLi | cli               }
+  {CLc | clc Cbl           }
+  =>
+  {CLm | clm ([EgfR - act] : ?ErbB1L:ErbB1L)  }
+  {CLi | cli [Cbl - Yphos] }
+  {CLc | clc               } .
+ 
+
+
+
+rl [E56.Pak1.irt.Egf] :
+  {CLm | clm ([EgfR - act] : ?ErbB1L:ErbB1L) }
+  {CLi | cli                                }
+  {CLc | clc   Pak1                         } 
+  =>
+  {CLm | clm ([EgfR - act] : ?ErbB1L:ErbB1L) }
+  {CLi | cli  [Pak1 - act]                  }
+  {CLc | clc                                } .
+
+
+
+rl [280.Raf1.by.Hras] :
+  {CLi | cli [Hras - GTP] [Pak1 - act] Src }
+  {CLc | clc  Raf1            1433x1 PP2a          }
+  =>
+  {CLi | cli [Hras - GTP] [Pak1 - act] Src [Raf1 - act] 1433x1  }
+  {CLc | clc                         PP2a          } .
+
+
+rl [14.Vav2.act] :
+  {CLm | clm ([EgfR - act] : ?ErbB1L:ErbB1L)  }
+  {CLi | cli Src              }
+  {CLc | clc Vav2             }
+  =>
+  {CLm | clm ([EgfR - act] : ?ErbB1L:ErbB1L) }
+  {CLi | cli Src [Vav2 - act] }
+  {CLc | clc                  } .
+ 
+
+
+
+rl [clt1.ctest] :
+  {CLi | cli Src  [Vav2 - act]   [Cbl - Yphos]   }
+  =>
+  {CLi | cli ( Src : ( [Vav2 - act] : [Cbl - Yphos] ) ) } .
+
+
+
+endm

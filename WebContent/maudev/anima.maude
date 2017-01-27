@@ -1,0 +1,135 @@
+***(
+Copyright 2014 Extensions of Logic Programming - Universitat Politècnica de València
+ 
+Permission is hereby granted, free of charge, to any person obtaining a copy of 
+this software and associated documentation files (the "Software"), to deal in 
+the Software without restriction, including without limitation the rights to use, 
+copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the 
+Software, and to permit persons to whom the Software is furnished to do so, 
+subject to the following conditions:
+ 
+The above copyright notice and this permission notice shall be included in all 
+copies or substantial portions of the Software.
+ 
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, 
+INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A 
+PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT 
+HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION 
+OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE 
+SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+)*** 
+
+--------------------------------------------------------------------------------
+---                                                     To be run on Mau-Dev 2.7
+---                                                safe-tools.dsic.upv.es/maudev
+---                                                         Author: Julia Sapiña
+--------------------------------------------------------------------------------
+
+load acuos.maude
+load elp.maude
+
+mod ANIMA is
+    pr ELP-AUTOFIX .
+    pr ELP-QUERY .
+    pr ELP-JSON .
+    
+    var M : Module .
+    var V : Variable .
+    var F : Qid .
+    var C : Constant .
+    vars T T' T1 T2 T3 T4 T* PAT LAMBDA LAMBDA' RHO RHO' : Term .
+    vars P P' P'' : Position .
+    var SP : Set{Position} .
+    vars TL TL' : TermList .
+    vars N NC NC' : Nat .
+    var FL : QidList .
+    var IT : InsTrace .
+    var ER : ExpandResult .
+    var R : Rule .
+    var E : Equation .
+    vars SB SB' SB'' : Substitution .
+    var ATS : AttrSet .
+    var NTL : NodeTermList .
+    var STR : String .
+
+    op ANIMA-BEG_ANIMA-END : String -> String .
+    op ANIMA-BEG_ANIMA-END : Term -> String .
+    op ANIMA-ERR : -> String .
+    op ANIMA-PARSE : -> String .
+    
+    op parseInputs : Module Term -> String .
+        eq parseInputs(M,T) = ANIMA-BEG ANIMA-PARSE ANIMA-END .
+    op parseInputs : Module String -> String .
+        eq parseInputs(M,STR) = ANIMA-BEG if (parseTerm(M,STR) =/= empty) then ANIMA-PARSE else ANIMA-ERR fi ANIMA-END .
+    op parseQuery : Module String -> String .
+        eq parseQuery(M,STR) = ANIMA-BEG parseTerm(M,STR) ANIMA-END .
+
+    op initialize : Module String -> String .
+        eq initialize(M,STR) = 
+            if (parseTerm(M,STR) =/= empty)
+            then initialize'(M,parseTerm(M,STR),buildInsTraceEQ(M,parseTerm(M,STR),redTrace(M,parseTerm(M,STR),false)))
+            else ANIMA-BEG ANIMA-ERR ANIMA-END
+            fi .
+        eq initialize(M,STR) = ANIMA-BEG ANIMA-ERR ANIMA-END [owise] .
+    
+    op initialize : Module Term -> String .
+        eq initialize(M,T) = initialize'(M,T,buildInsTraceEQ(M,T,redTrace(M,T,false))) .
+
+    op initialize' : Module Term InsTrace -> String .
+        eq initialize'(M,T,nil) = ANIMA-BEG "{ELP-DQtermELP-DQ:" + json(M,T) + ",ELP-DQtypeELP-DQ:ELP-DQ" + string(getType(metaNormalize(M,T))) + "ELP-DQ,ELP-DQkindsELP-DQ:[" + json(getKinds(M)) + "]}" ANIMA-END .
+        eq initialize'(M,T,IT) = ANIMA-BEG "{ELP-DQtermELP-DQ:" + json(M,T) + ",ELP-DQtypeELP-DQ:ELP-DQ" + string(getType(metaNormalize(M,T))) + "ELP-DQ,ELP-DQkindsELP-DQ:[" + json(getKinds(M)) + "],ELP-DQtraceELP-DQ:[" + json(M,IT) + "]}" ANIMA-END [owise] .
+        
+    op doInteractive : Module Term -> String .
+        eq doInteractive(M,T) = ANIMA-BEG "{ELP-DQexpandsELP-DQ:[" + doInteractive'(M,expandNode(M,T)) + "]}" ANIMA-END .
+
+    op doInteractive' : Module ExpandResult -> String .
+        eq doInteractive'(M,(nil).ExpandResult) = "" .
+        eq doInteractive'(M,{IT} nil) = "{ELP-DQredexELP-DQ:ELP-DQ" + json(getRedex(M,getPos(IT),getLeftTerm(IT),getFirstTerm(IT),9999)) + "ELP-DQ,ELP-DQcontractumELP-DQ:ELP-DQ" + json(getContractum(M,IT)) + "ELP-DQ,ELP-DQtraceELP-DQ:[" + json(M,IT) + "]}" .
+        eq doInteractive'(M,{IT} ER) = "{ELP-DQredexELP-DQ:ELP-DQ" + json(getRedex(M,getPos(IT),getLeftTerm(IT),getFirstTerm(IT),9999)) + "ELP-DQ,ELP-DQcontractumELP-DQ:ELP-DQ" + json(getContractum(M,IT)) + "ELP-DQ,ELP-DQtraceELP-DQ:[" + json(M,IT) + "]}," + doInteractive'(M,ER) [owise] .
+
+    op doPartial : Module Term Position Term -> String .
+        eq doPartial(M,T,noPos,T') = 
+            if ((expandNode(M,T) == (nil).ExpandResult) or (expandNode(M,T) == {nil})) 
+            then ANIMA-BEG "{ELP-DQsliceELP-DQ:" + json(M,getTerm(slice(M,T',Lambda,mPos(T'),none,getNC(T')))) + ",ELP-DQexpandsELP-DQ:[]}" ANIMA-END
+            else ANIMA-BEG "{ELP-DQsliceELP-DQ:" + json(M,getTerm(slice(M,T',Lambda,mPos(T'),none,getNC(T')))) + ",ELP-DQexpandsELP-DQ:[" + doPartial'(M,expandNode(M,T,getTerm(slice(M,T',Lambda,mPos(T'),none,getNC(T')))),(getSub(T,T') ; getSub(slice(M,T',Lambda,mPos(T'),none,getNC(T'))))) + "]}" ANIMA-END
+            fi .
+
+        eq doPartial(M,T,SP,T') = 
+            if ((expandNode(M,T) == (nil).ExpandResult) or (expandNode(M,T) == {nil})) 
+            then ANIMA-BEG "{ELP-DQsliceELP-DQ:" + json(M,getTerm(slice(M,T',Lambda,extendPos(SP),none,getNC(T')))) + ",ELP-DQexpandsELP-DQ:[]}" ANIMA-END
+            else ANIMA-BEG "{ELP-DQsliceELP-DQ:" + json(M,getTerm(slice(M,T',Lambda,extendPos(SP),none,getNC(T')))) + ",ELP-DQexpandsELP-DQ:[" + doPartial'(M,expandNode(M,T,getTerm(slice(M,T',Lambda,extendPos(SP),none,getNC(T')))),(getSub(T,T') ; getSub(slice(M,T',Lambda,extendPos(SP),none,getNC(T'))))) + "]}" ANIMA-END
+            fi [owise] .
+
+    op doPartial' : Module ExpandResult Substitution -> String .
+        eq doPartial'(M,(nil).ExpandResult,SB) = "" .
+        eq doPartial'(M,{IT} nil,SB) = "{ELP-DQredexELP-DQ:ELP-DQ" + json(getRedex(M,getPos(IT),getLeftTerm(IT),getFirstTerm(IT),9999)) + "ELP-DQ,ELP-DQcontractumELP-DQ:ELP-DQ" + json(getContractum(M,IT)) + "ELP-DQ,ELP-DQtraceELP-DQ:[" + json(M,IT,SB) + "]}" .
+        eq doPartial'(M,{IT} ER,SB) = "{ELP-DQredexELP-DQ:ELP-DQ" + json(getRedex(M,getPos(IT),getLeftTerm(IT),getFirstTerm(IT),9999)) + "ELP-DQ,ELP-DQcontractumELP-DQ:ELP-DQ" + json(getContractum(M,IT)) + "ELP-DQ,ELP-DQtraceELP-DQ:[" + json(M,IT,SB) + "]}," + doPartial'(M,ER,SB) [owise] .
+
+    op doForward : Module Term Position Term -> String .
+        eq doForward(M,T,noPos,T*) = ANIMA-BEG "{ELP-DQsliceELP-DQ:" + json(M,getTerm(slice(M,T*,T,Lambda,getNC(T*) + 1))) + ",ELP-DQexpandsELP-DQ:[" + doForward'(M,expandNode(M,T),mPos(T),T*,getNC(T*) + 1) + "]}" ANIMA-END .
+        eq doForward(M,T,SP,T*) = ANIMA-BEG "{ELP-DQsliceELP-DQ:" + json(M,getTerm(slice(M,T*,Lambda,extendPos(SP),getNC(T*) + 1))) + ",ELP-DQexpandsELP-DQ:[" + doForward'(M,expandNode(M,T),extendPos(SP),T*,getNC(T*) + 1) + "]}" ANIMA-END [owise] .
+
+    op doForward' : Module ExpandResult Position Term Nat -> String .
+        eq doForward'(M,(nil).ExpandResult,SP,T*,NC) = "" .
+        eq doForward'(M,{IT} nil,SP,T*,NC) = if (SP == noPos) then "" else "{ELP-DQredexELP-DQ:ELP-DQ" + json(getRedex(M,getPos(IT),getLeftTerm(IT),getFirstTerm(IT),9999)) + "ELP-DQ,ELP-DQcontractumELP-DQ:ELP-DQ" + json(getContractum(M,IT)) + "ELP-DQ,ELP-DQtraceELP-DQ:[" + json(M,IT,getTrace(fwdSlicing(M,IT,getTerm(slice(M,T*,Lambda,SP,NC)),nil,getNC(slice(M,T*,Lambda,SP,NC))))) + "]}" fi .
+        eq doForward'(M,{IT} ER,SP,T*,NC) = if (SP == noPos) then "" else "{ELP-DQredexELP-DQ:ELP-DQ" + json(getRedex(M,getPos(IT),getLeftTerm(IT),getFirstTerm(IT),9999)) + "ELP-DQ,ELP-DQcontractumELP-DQ:ELP-DQ" + json(getContractum(M,IT)) + "ELP-DQ,ELP-DQtraceELP-DQ:[" + json(M,IT,getTrace(fwdSlicing(M,IT,getTerm(slice(M,T*,Lambda,SP,NC)),nil,getNC(slice(M,T*,Lambda,SP,NC))))) + "]}," + doForward'(M,ER,SP,T*,NC) fi [owise] .
+
+    op doQuery : Module NodeTermList Term -> String .
+        eq doQuery(M,NTL,PAT) = ANIMA-BEG "{ELP-DQqueryELP-DQ:[" + json(doQuery'(M,NTL,PAT)) + "]}" ANIMA-END .
+
+    op doQuery' : Module NodeTermList Term -> QueryResult .
+        eq doQuery'(M,nil,PAT) = nil .
+        eq doQuery'(M,{N,T} NTL,PAT) = (N :: findMatching(M,T,PAT,Lambda,Lambda,noF)) doQuery'(M,NTL,PAT) .
+
+    op getRedex : Module Position TermList TermList Nat -> Position .
+        eq getRedex(M,P,TL,empty,NC) = noPos .
+        eq getRedex(M,P,empty,TL,NC) = noPos .
+        eq getRedex(M,P,TL,TL',NC) = if (TL == TL') then P else recoverPos(getTerm(sliceUnflatStep(M,TL',TL,getTerm(invSlice(M,TL,Lambda,P,NC)),getNC(invSlice(M,TL,Lambda,P,NC)))),Lambda,9999) fi [owise] .
+        
+    op getContractum : Module InsTrace -> Position .
+        eq getContractum(M,nil) = noPos .
+        eq getContractum(M,(T1 ->^{(eq LAMBDA = RHO [ATS label('unflattening)] .),SB',P'} T2) (T2 ->^{R,SB,P} T3) IT) = recoverPos(getLastTerm(getTrace(fwdSlicing(M,(T2 ->^{R,SB,P}(T3)) IT,getTerm(invSlice(M,T2,Lambda,P,9999)),nil,getNC(invSlice(M,T2,Lambda,P,9999))))),Lambda,9999) .
+        eq getContractum(M,(T1 ->^{(eq LAMBDA = RHO [ATS label('flattening)] .),SB'',P''} T2) (T2 ->^{(eq LAMBDA' = RHO' [ATS label('unflattening)] .),SB',P'} T3) (T3 ->^{R,SB,P} T4) IT) = recoverPos(getLastTerm(getTrace(fwdSlicing(M,(T3 ->^{R,SB,P} T4) IT,getTerm(invSlice(M,T3,Lambda,P,9999)),nil,getNC(invSlice(M,T3,Lambda,P,9999))))),Lambda,9999) .
+        eq getContractum(M,(T1 ->^{(eq LAMBDA = RHO [ATS label('flattening)] .),SB,P} T2)) = Lambda .
+        eq getContractum(M,(T1 ->^{R,SB,P} T2) IT) = recoverPos(getLastTerm(getTrace(fwdSlicing(M,(T1 ->^{R,SB,P} T2) IT,getTerm(invSlice(M,T1,Lambda,P,9999)),nil,getNC(invSlice(M,T1,Lambda,P,9999))))),Lambda,9999) [owise] .
+endm

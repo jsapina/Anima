@@ -1,0 +1,42 @@
+mod MAZE is
+  pr NAT .
+
+  sorts Pos List State .
+  subsort Pos < List .
+
+  op nil : -> List [ctor] .
+  op size : -> Nat .
+  op wall : -> List .
+  op empty : -> State [ctor] .
+  op next : List Nat -> Pos .
+  op isSol : List -> Bool .
+  op isOk : List -> Bool .
+  op _ in _ : Pos List -> Bool .
+  op `{_,_`} : List Nat -> State [ctor] .
+  op __ : List List -> List [ctor assoc id: nil] .
+  op `[_`,_`] : Nat Nat -> Pos [ctor] .
+  op _||_ : State State -> State [ctor assoc id: empty] .
+
+  vars X Y N M : Nat .
+  var P Q : Pos .
+  vars L L1 L2 : List .
+
+  eq [s] : size = 5 . --- Assumption: 5x5 maze
+  
+  eq [wl] : wall = [2,1] [2,2] [3,2] [2,3] [4,3] [5,3] [1,5] [2,5] [3,5] [4,5] .
+  eq [ok] : isOk(L [X,Y]) = X >= 1 and Y >= 1 and X <= 5 and Y <= 5 and not([X,Y] in L) and not([X,Y] in wall) .
+  
+  eq [is1] : isSol(L [size,size]) = true . --- Assumption: the exit is located
+  eq [is2] : isSol(L) = false [owise] . --- at position [size,size]
+  
+  ceq [c1] : P in L = true if L1 P L2 := L .
+  eq [c2] : P in L = false [owise] .
+  
+  rl [n1] : next(L [X,Y],N) => [X, Y + N] .
+  rl [n2] : next(L [X,Y],N) => [sd(X, N), Y] .
+  rl [n3] : next(L [X,Y],N) => [X, sd(Y, N)] .
+  rl [n4] : next(L [X,Y],N) => [X + N, Y] .
+  
+  crl [walk] : { L , M } => { L P , M + 1 } if next(L,1) => P /\ isOk(L P) .
+  crl [jump] : { L , M } => { L P , M + 1 } if next(L,2) => P /\ isOk(L P) .
+endm

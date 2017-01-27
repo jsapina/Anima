@@ -1,0 +1,145 @@
+mod EXAMPLE-THEORY is 
+  sort Universal . --- Special sort used for unsorted actions (don't remove)
+  sort Msg . --- Generic sort for messages
+  sort Fresh . --- Sort for private information.
+  sort Public . --- Handy sort to say what is public
+  subsort Public < Msg .
+  op emptyPublic : -> Public .
+  op nullFresh : -> Fresh .
+
+  sort MsgSet .
+  subsort Msg < MsgSet .
+  op emptyMsgSet : -> MsgSet [ctor] .
+  op _`,_ : MsgSet MsgSet -> MsgSet   [ctor assoc comm id: emptyMsgSet] .   
+
+  op noMsg : -> Msg . --- Auxiliar useless message used as a marker
+
+  sort SMsg .
+  sort SignedSMsg . 
+  subsort SignedSMsg < SMsg .
+  op +`(_`) : Msg -> SignedSMsg [format (nir d d d o)] .
+  op -`(_`) : Msg -> SignedSMsg [format (nib d d d o)] .
+
+  sort EmptyList .
+  op nil : -> EmptyList [ctor format (ni d)] .
+  op _`,_ : EmptyList EmptyList -> EmptyList [ctor assoc id: nil format (d d s d)] .
+ 
+  sort SMsgList .
+  subsort SMsg  < SMsgList .
+  subsort EmptyList < SMsgList .
+  op _`,_ : SMsgList SMsgList -> SMsgList [ctor assoc id: nil format (d d s d)] . 
+
+  --- We duplicate the SMsgList sort because A-unification may generate
+  --- an infinite number of most-general unifiers.
+  sort SMsgList-L SMsgList-R .
+  op nil : -> SMsgList-R [ctor] .
+  op _`,_ : SMsg SMsgList-R -> SMsgList-R [ctor format (d d s d) gather (e E)] .
+  op nil : -> SMsgList-L [ctor] .
+  op _`,_ : SMsgList-L SMsg -> SMsgList-L [ctor format (d d s d) gather (E e)] .
+
+  sort FreshSet .
+  subsort Fresh < FreshSet .
+  op nil : -> FreshSet [ctor] .
+  op _`,_ : FreshSet FreshSet -> FreshSet [ctor comm assoc id: nil] .
+
+  sort Strand .
+  op ::_::`[_|_`] : FreshSet SMsgList-L SMsgList-R -> Strand [format (ni d d ni s+++ s--- s+++ d s---)] .
+
+  sort StrandSet .
+  subsort Strand < StrandSet .
+  op empty : -> StrandSet [ctor] .
+  op _&_ : StrandSet StrandSet -> StrandSet [ctor assoc comm id: empty format (d d d d)] .
+
+  sort Knowledge-!inI Knowledge-inI  IntruderKnowledge-empty  Knowledge   . --- < Knowledge .
+  subsort Knowledge-!inI Knowledge-inI  IntruderKnowledge-empty < Knowledge .
+  op _!inI : Msg -> Knowledge-!inI [format (ni d o)] .
+  op _inI : Msg -> Knowledge-inI [format (niu d o)] .
+
+  sort IntruderKnowledge-!inI IntruderKnowledge-inI IntruderKnowledgeElem  IntruderKnowledge .
+  subsort IntruderKnowledge-empty < IntruderKnowledge-!inI .
+  subsort IntruderKnowledge-empty < IntruderKnowledge-inI .
+  subsort IntruderKnowledge-!inI IntruderKnowledge-inI < IntruderKnowledge .
+  subsort Knowledge-!inI < IntruderKnowledge-!inI .
+  subsort Knowledge-inI < IntruderKnowledge-inI .
+  subsort Knowledge < IntruderKnowledgeElem < IntruderKnowledge .
+  op empty : -> IntruderKnowledge-empty [ctor] .
+  op _`,_ : IntruderKnowledge IntruderKnowledge -> IntruderKnowledge [ctor assoc comm id: empty format (d d d d)] .  
+  op _`,_ : IntruderKnowledge-!inI IntruderKnowledge-!inI -> IntruderKnowledge-!inI [ditto] .
+  op _`,_ : IntruderKnowledge-inI IntruderKnowledge-inI -> IntruderKnowledge-inI [ditto] .
+  op _`,_ : IntruderKnowledge-empty IntruderKnowledge-empty -> IntruderKnowledge-empty [ditto] .
+  
+  sort System .
+  op _||_ : StrandSet IntruderKnowledge -> System  [format (d n d n)] .
+
+ --- Sort Information 
+  sorts Name Nonce Key .
+  subsort Name Nonce Key < Msg .
+  subsort Name < Key .
+  subsort Name < Public .
+ 
+   --- Nonce operator
+  op n : Name Fresh -> Nonce [frozen] .
+  
+  --- Encoding operators for public/private encryption
+  op pk : Name Msg -> Msg  .
+  op sk : Name Msg -> Msg  .
+
+ --- Associativity operator
+  op _;_ : Msg  Msg  -> Msg [gather (e E) frozen] . 
+
+    --- constant that denotes the intruder's name (you could also have the same for Alice and Bob)
+  op i : -> Name .
+  op a : -> Name .
+  op b : -> Name .
+
+  op c0 : -> Fresh .
+  op c1 : -> Fresh .
+
+  var SS : StrandSet .
+  var K : IntruderKnowledge .
+  var ML : SMsgList .
+  var L1 : SMsgList-L .
+  var L2 : SMsgList-R .
+  var M   : Msg .
+  var rrL : FreshSet .
+  var A B : Name .
+  vars X Y Z : Msg .
+  var Sys Sys' : System .
+  var r r' : Fresh .
+  var Str : Strand .
+  var N NA NB : Nonce .
+  var IK : IntruderKnowledge .
+  var Ke : Key .
+
+ --- this rule accepts an output message, without modifiying the intruder knowledge
+    rl [acceptOutput] : (SS:StrandSet & 
+        :: rrL:FreshSet :: [ L1:SMsgList-L | +(M:Msg), L2:SMsgList-R] )
+        || K:IntruderKnowledge
+    => (SS:StrandSet & 
+        :: rrL:FreshSet :: [ L1:SMsgList-L, +(M:Msg) | L2:SMsgList-R] )
+        || K:IntruderKnowledge .
+ 
+
+ --- this rule accepts an output message that already appears in the negative intruder knowledge
+ --- thus, the term M !inI is modified to M inI to denote that the intruder has learnt that message.
+    rl [acceptOutput2] : (SS:StrandSet & 
+        :: rrL:FreshSet :: [ L1:SMsgList-L | +(M:Msg), L2:SMsgList-R] )
+        || K:IntruderKnowledge, M:Msg !inI
+    => (SS:StrandSet & 
+        :: rrL:FreshSet :: [ L1:SMsgList-L, +(M:Msg) | L2:SMsgList-R] )
+        || K:IntruderKnowledge, M:Msg inI .
+
+ --- this rule accepts an input message and does not modify the intruder knowledge
+    rl [acceptInput] : (SS:StrandSet & 
+        :: rrL:FreshSet :: [ L1:SMsgList-L | -(M:Msg), L2:SMsgList-R] )
+        || K:IntruderKnowledge
+    => (SS:StrandSet & 
+        :: rrL:FreshSet :: [ L1:SMsgList-L, -(M:Msg) | L2:SMsgList-R] )
+        || K:IntruderKnowledge .
+
+
+  --- Encryption/Decryption Cancellation
+  eq [eqPK-SK] : pk(Ke,sk(Ke,Z)) = Z .
+  eq [eqSK-PK] : sk(Ke,pk(Ke,Z)) = Z .
+
+endm

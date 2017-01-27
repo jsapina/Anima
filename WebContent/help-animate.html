@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<!-- 
+Copyright 2014 Extensions of Logic Programming - Universitat Politècnica de València
+
+Permission is hereby granted, free of charge, to any person obtaining a copy of 
+this software and associated documentation files (the "Software"), to deal in 
+the Software without restriction, including without limitation the rights to use, 
+copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the 
+Software, and to permit persons to whom the Software is furnished to do so, 
+subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all 
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, 
+INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A 
+PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT 
+HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION 
+OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE 
+SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+ -->
+ 
+<html>
+<head>
+	<title>Anima Online Stepper Help</title>
+	<meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+	<link rel="icon" type="image/x-icon" href="./img/favicon.ico">
+	<link href="css/bootstrap.css" rel="stylesheet" media="screen,print">
+    <link href="css/bootstrap-select.css" rel="stylesheet" media="screen,print">
+    <link href="css/anima.css" rel="stylesheet" media="screen,print">
+    
+    <script type="text/javascript" charset="utf-8" src="js/jquery.min.js"></script>
+    <script type="text/javascript" charset="utf-8" src="js/jquery-ui.min.js"></script>
+	<script type="text/javascript" charset="utf-8" src="js/bootstrap.min.js"></script>
+</head>
+
+<body style="background-color: #505050;">
+    	<br>
+    	<div class="panel panel-primary animaPanel" style="margin: 0 auto; width: 900px;">
+        	<div class="panel-heading animaPanelHeading">
+          		<h3 class="panel-title animaPanelTitle">Anima Online Stepper Help</h3>
+        	</div>
+        	<div class="panel-body" style="background-color: #f0f0f0;">
+        		<br>
+         		<img src="img/help2.png" alt="Anima Online Stepper" style="display: block; margin: auto;">
+				<br>
+				<h3 class="helpHeader">Go Back (<span style="color: red; font-weight: bold;">A</span>)</h3>
+				<p class="justified helpText">Restarts the tool to enter a new program and initial state.</p>
+				<p></p>
+				<h3 class="helpHeader">Zoom (<span style="color: red; font-weight: bold;">B</span>)</h3>
+				<p class="justified helpText">Allows the user to zoom in and out the computation tree by clicking the plus and minus symbols or by 
+				pressing the corresponding keys of the numeric keyboard. Also, by clicking in the displayed zoom level value, it resets 
+				to the default value of 100%. Moreover, the computation tree can be easily repositioned by dragging it with the mouse or 
+				by pressing the direction arrows of the keyboard. Finally, each time the window is resized or a node is selected, the 
+				computation tree is automatically centered with respect to the currently selected node.</p>
+				<p></p>
+				<h3 class="helpHeader">Anima Tree (<span style="color: red; font-weight: bold;">C</span>)</h3>
+				<p class="justified helpText">
+				Shows an interactive computation tree that allows the user to analyze the behaviour of the input program starting from the given input state. 
+				The tree can be inspected by expanding its states according to one of the different exploration modalities described in section <span style="color: red; font-weight: bold; font-family: 'lucida grande',tahoma,verdana,arial,sans-serif;">D</span>.
+				</p>
+				<p class="justified helpText">
+				The supported interactions with the computation tree can be summarized as follows:
+				<dl class="helpText">
+				<dd><span class="glyphicon glyphicon-hand-right"></span>&nbsp;&nbsp; Select any part of the state to <b>highlight the relevant subterms</b> that will be consider as the slicing criterion. There is no need to select the whole subterms; the tool automatically detects and highlights a subterm if at least one of the subterm is selected.
+				The procedure to remove the highlighting of a subterm is as simple as just left-clicking on it.</dd>
+				<dd>&nbsp;</dd>
+				<dd><span class="glyphicon glyphicon-hand-right"></span>&nbsp;&nbsp; Right-click in a <b>node</b> to access the features described in the <span style="color: red; font-weight: bold; font-family: 'lucida grande',tahoma,verdana,arial,sans-serif;">E</span> section of this help.</dd>
+				<dd>&nbsp;</dd>
+				<dd><span class="glyphicon glyphicon-hand-right"></span>&nbsp;&nbsp; Left-click in a <b>state label</b> to expand the selected node, which will compute all the possible single rewriting steps that can be performed starting from the state under the fixed exploring modality.</dd>
+				<dd>&nbsp;</dd>
+				<dd><span class="glyphicon glyphicon-hand-right"></span>&nbsp;&nbsp; Left-click in a <b>rule label</b> to access the detailed information of the transition from the previous state to the current state. This information includes the rule or equation applied, the computed substitution and the position of the redex being reduced.</dd>
+				<dd>&nbsp;</dd>
+				<dd><span class="glyphicon glyphicon-hand-right"></span>&nbsp;&nbsp; Left-click in any part of the <b>node</b> to select it. To facilitate the inspection, whenever a node is selected, the tree view automatically focuses on the node, although the user can easily move it to the desired position by manually dragging it.</dd>
+				<dd>&nbsp;</dd>
+				<dd><span class="glyphicon glyphicon-hand-right"></span>&nbsp;&nbsp; Left-click in the&nbsp;&nbsp;<img src="img/plus.png" style="padding-bottom: 3px;">&nbsp;&nbsp;and&nbsp;&nbsp;<img src="img/minus.png" style="padding-bottom: 3px;">&nbsp;&nbsp;symbols to show/hide the instrumentation steps between two normalized states.</dd>
+				</dl>
+				<p>
+				<h3 class="helpHeader">Options Pane (<span style="color: red; font-weight: bold;">D</span>)</h3>
+				<dl class="helpText">
+					<dt><span class="glyphicon glyphicon-hand-right"></span>&nbsp;&nbsp;Interactive stepper / Partial stepper / Forward slicer</dt>
+					<dd>Selects the desired inspection strategy, which gets fixed once the B-normalized root of the tree is first expanded and lasts 
+					until it is folded, resetting the entire computation tree. The criteria for the partial stepper and forward slicer 
+					strategies can be specified by highlighting with the mouse the state symbols of interest directly on the tree (or by executing 
+					a query) and then expanding the node.</dd>
+		
+					<dt><br><span class="glyphicon glyphicon-hand-right"></span>&nbsp;&nbsp;Instrumentation steps</dt>
+					<dd>Displays either the default, simplified view of a Maude step, or the complete and detailed 
+					sequence of steps in the corresponding instrumented trace that simulates the Maude step. This 
+					facility can be locally accessed by clicking in the plus and minus symbols that respectively 
+					adorn the standard/instrumented view of the Maude step, or by checking/unchecking this option 
+					for the entire computation tree.</dd>
+		
+					<dt><br><span class="glyphicon glyphicon-hand-right"></span>&nbsp;&nbsp;Meta-level view</dt>
+					<dd>Shows the transition and state information in meta-level representation.</dd>
+		
+					<dt><br><span class="glyphicon glyphicon-hand-right"></span>&nbsp;&nbsp;State labels</dt>
+					<dd>Shows or hides the unique identifier of each state.</dd>
+		
+					<dt><br><span class="glyphicon glyphicon-hand-right"></span>&nbsp;&nbsp;Rule labels</dt>
+					<dd>Shows or hides the labels of the applied rules or equations at each transition.</dd>
+		
+					<dt><br><span class="glyphicon glyphicon-hand-right"></span>&nbsp;&nbsp;Redex</dt>
+					<dd>Underlines the discrepancies between the two states (typically the selected redex of the original term and its contractum in the derived term). 
+					In the case of a non-instrumented step we cannot, in general, highlight the redex and contractum of the step as they 
+					could be spreaded into pieces in the displayed terms because of the matching modulo B that precedes the rewrite step, and the 
+					normalization that occurs after the rewrite step. Actually, note that both terms are eventually reordered, 
+					augmented with identity elements, and parenthesised, yielding the B-equivalent terms that star in an intermediate 
+					rewrite step. In this case, we underline the antecedents in the original term of the reduced redex  
+					from its B-equivalent form (and the descendants in the derived, B-normalized term of the corresponding contractum).</dd>
+					
+					<dt><br><span class="glyphicon glyphicon-hand-right"></span>&nbsp;&nbsp;Show Maude program</dt>
+					<dd>Shows the provided Maude program.</dd>
+		
+					<dt><br><span class="glyphicon glyphicon-hand-right"></span>&nbsp;&nbsp;Restore original tree</dt>
+					<dd>Restores the computation tree to its initial state.</dd>
+		
+					<dt><br><span class="glyphicon glyphicon-hand-right"></span>&nbsp;&nbsp;Clear all criteria</dt>
+					<dd>Clears the selected criteria for all the states.</dd>
+		
+					<dt><br><span class="glyphicon glyphicon-hand-right"></span>&nbsp;&nbsp;Draw computation graph</dt>
+					<dd>Shows an interactive graph representation of the computation tree.</dd>
+		
+					<dt><br><span class="glyphicon glyphicon-hand-right"></span>&nbsp;&nbsp;Draw Ω-graph <span style="font-weight: normal; font-style: italic;">(only available in the Partial stepper exploration modality)</span></dt>
+					<dd>Shows an interactive graph representation of the partial computation tree.</dd>
+		
+					<dt><br><span class="glyphicon glyphicon-hand-right"></span>&nbsp;&nbsp;Draw sliced graph <span style="font-weight: normal; font-style: italic;">(only available in the Forward slicing exploration modality)</span></dt>
+					<dd>Shows an interactive graph representation of the sliced computation tree.</dd>
+		
+					<dt><br><span class="glyphicon glyphicon-hand-right"></span>&nbsp;&nbsp;Help</dt>
+					<dd>Shows this window.</dd>
+				</dl>
+				<p></p>
+				<h3 class="helpHeader">Context Menu (<span style="color: red; font-weight: bold;">E</span>)</h3>
+				<dl class="helpText">
+					<dt><span class="glyphicon glyphicon-hand-right"></span>&nbsp;&nbsp;Expand node / Fold node</dt>
+					<dd>Expands the node using the selected strategy and criterion (if applicable) or folds it, deleting all the previously 
+					computed expansion information.</dd>
+		
+					<dt><br><span class="glyphicon glyphicon-hand-right"></span>&nbsp;&nbsp;Expand subtree / Fold node</dt>
+					<dd>Expands the subtree whose root is the selected node by using a breadth-first strategy and up to the selected depth, which is adjustable from the slider control.</dd>
+		
+					<dt><br><span class="glyphicon glyphicon-hand-right"></span>&nbsp;&nbsp;Show state information</dt>
+					<dd>Displays the concrete and abstract information of the selected state in a fresh window to facilitate its inspection.</dd>
+		
+					<dt><br><span class="glyphicon glyphicon-hand-right"></span>&nbsp;&nbsp;Show transition information</dt>
+					<dd>Shows additional transition information like the rule/equation applied and the computed substitution. 
+					This information can be also accessed by clicking on the corresponding edge label that identifies the rule or equation 
+					applied.</dd>
+		
+					<dt><br><span class="glyphicon glyphicon-hand-right"></span>&nbsp;&nbsp;Show trace information</dt>
+					<dd>Shows the complete information of the execution trace leading from the root to the selected node. 
+					This information is presented in a table that includes the labels of the rules and equations applied, 
+					the terms that result from the application of each rule or equation and the computed trace slice 
+					(if applicable). Moreover, Anima offers the possibility to export the displayed trace into meta-level 
+					representation, so the user can easily transfer the selected trace to any other Maude trace analyzer 
+					tool like, for example, <a href="http://safe-tools.dsic.upv.es/iJulienne"><span class="iJulienne1">i</span><span class="iJulienne2">Julienne</span></a>.</dd>
+		
+					<dt><br><span class="glyphicon glyphicon-hand-right"></span>&nbsp;&nbsp;Send trace to <span class="iJulienne1">i</span><span class="iJulienne2">Julienne</span></dt>
+					<dd>Exports the trace leading from the initial to the selected state to the <a href="http://safe-tools.dsic.upv.es/iJulienne"><span class="iJulienne1">i</span><span class="iJulienne2">Julienne</span></a> 
+					online trace analyzer tool, which supports both incremental forward and backward slicing of a given Maude computation trace. </dd>
+		
+					<dt><br><span class="glyphicon glyphicon-hand-right"></span>&nbsp;&nbsp;Draw meta-term</dt>
+					<dd>Draws the meta-representation of the selected state in a tree-form together with the position of each subterm in order to facilitate its inspection.</dd>
+
+					<dt><br><span class="glyphicon glyphicon-hand-right"></span>&nbsp;&nbsp;Statistics</dt>
+					<dd>Shows detailed statistics of the current computation tree for the selected node in the tree. This shows, 
+					among others, the number of terms (normalized or not) that are reachable from this node, its number of children 
+					and depth in the tree, and the global size of the computation tree.</dd>
+				</dl>
+				<p></p>
+				<h3 class="helpHeader">Node Colors (<span style="color: red; font-weight: bold;">F</span>)</h3>
+				<dl class="helpText">
+					<dt><img src="img/c1.png"><span style="vertical-align: top;">&nbsp;&nbsp;Default nodes background color</span></dt>
+					<dd style="padding-left: 32px;">Click to choose the background color of the default nodes in the displayed computation tree.</dd>
+		
+					<dt><br><img src="img/c2.png"><span style="vertical-align: top;">&nbsp;&nbsp;Instrumentation nodes background color</span></dt>
+					<dd style="padding-left: 32px;">Click to choose the background color of the instrumentation nodes in the displayed computation tree.</dd>
+		
+					<dt><br><img src="img/c3.png"><span style="vertical-align: top;">&nbsp;&nbsp;Redundant nodes background color</span></dt>
+					<dd style="padding-left: 32px;">Click to choose the background color of the redundant nodes in the displayed computation tree (i.e., those states that can be ignored in the computed trace slice).</dd>
+		
+					<dt><br><img src="img/c4.png"><span style="vertical-align: top;">&nbsp;&nbsp;Parent nodes background color</span></dt>
+					<dd style="padding-left: 32px;">Click to choose the background color of the parent nodes (except for the instrumented ones) of the currently selected node in the displayed computation tree.</dd>
+		
+					<dt><br><img src="img/c5.png"><span style="vertical-align: top;">&nbsp;&nbsp;Selected node background color</span></dt>
+					<dd style="padding-left: 32px;">Click to choose the background color of the currently selected node in the displayed computation tree.</dd>
+				</dl>
+				<p></p>
+				<h3 class="helpHeader">Query Input (<span style="color: red; font-weight: bold;">G</span>)</h3>
+				<p class="justified helpText">Allows the information of interest to be searched on huge states of complex computation trees. The user only
+				has to provide a filtering pattern (the query) that specifies the set of symbols that he/she wants to search for and press enter.
+				After that, all the states matching the query are automatically highlighted in the computation tree. Use symbols ? and _ as wildcards 
+				to respectively identify and discard information.
+				</p>
+        	</div>
+      	</div>
+      	<br>
+</body>
+</html>

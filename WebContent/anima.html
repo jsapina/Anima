@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+
+<!-- 
+Copyright 2014 Extensions of Logic Programming - Universitat Politècnica de València
+
+Permission is hereby granted, free of charge, to any person obtaining a copy of 
+this software and associated documentation files (the "Software"), to deal in 
+the Software without restriction, including without limitation the rights to use, 
+copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the 
+Software, and to permit persons to whom the Software is furnished to do so, 
+subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all 
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, 
+INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A 
+PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT 
+HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION 
+OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE 
+SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+ -->
+
+<html style="overflow-y: scroll;">
+<head>
+	<title>Anima Online Stepper</title>
+	<meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+    <meta http-equiv="Pragma" content="no-cache" />
+    <meta http-equiv="Expires" content="0" />
+    
+    <link rel="icon" type="image/x-icon" href="./img/favicon.ico">
+    <link href="css/colorpicker.css" rel="stylesheet" media="screen,print">
+    <link href="css/bootstrap.css" rel="stylesheet" media="screen,print">
+    <link href="css/bootstrap-select.css" rel="stylesheet" media="screen,print">
+    <link href="css/bootstrap-slider.css" rel="stylesheet" media="screen,print">
+    <link href="css/elp.css" rel="stylesheet" media="screen,print">
+    <link href="css/anima.css" rel="stylesheet" media="screen,print">
+    <link href="css/anima-tree.css" rel="stylesheet" media="screen,print">
+    <link href="css/codemirror.css" rel="stylesheet" media="screen,print">
+    <link href="css/neat.css" rel="stylesheet" media="screen,print">
+    
+    <script type="text/javascript" charset="utf-8" src="js/anima-paths.js"></script>
+    <script type="text/javascript" charset="utf-8" src="js/anima-vars.js"></script>
+    <script type="text/javascript" charset="utf-8" src="js/jquery.min.js"></script>
+    <script type="text/javascript" charset="utf-8" src="js/jquery-ui.min.js"></script>
+	<script type="text/javascript" charset="utf-8" src="js/bootstrap.min.js"></script>
+	<script type="text/javascript" charset="utf-8" src="js/bootstrap-select.min.js"></script>
+	<script type="text/javascript" charset="utf-8" src="js/bootstrap-hover-dropdown.min.js"></script>
+	<script type="text/javascript" charset="utf-8" src="js/bootstrap-slider.js"></script>
+	<script type="text/javascript" charset="utf-8" src="js/jquery.textHighlighter.js"></script>
+	<script type="text/javascript" charset="utf-8" src="js/jquery.zero-clipboard.js"></script>
+	<script type="text/javascript" charset="utf-8" src="js/jquery.colorpicker.js"></script>
+	<script type="text/javascript" charset="utf-8" src="js/jquery.fileupload.js"></script>
+	<script type="text/javascript" charset="utf-8" src="js/anima.js"></script>
+	<script type="text/javascript" charset="utf-8" src="js/anima-ui.js"></script>
+	<script type="text/javascript" charset="utf-8" src="js/anima-node.js"></script>
+	<script type="text/javascript" charset="utf-8" src="js/anima-tree.js"></script>
+	<script type="text/javascript" charset="utf-8" src="js/anima-query.js"></script>
+	<script type="text/javascript" charset="utf-8" src="js/anima-utils.js"></script>
+	<script type="text/javascript" charset="utf-8" src="js/anima-parser.js"></script>
+	<script type="text/javascript" charset="utf-8" src="js/anima-highlight.js"></script>
+	<script type="text/javascript" charset="utf-8" src="js/anima-integration.js"></script>
+	<script type="text/javascript" charset="utf-8" src="js/codemirror.js"></script>
+	<script type="text/javascript" charset="utf-8" src="js/codemirror-placeholder.js"></script>
+	<script type="text/javascript" charset="utf-8" src="js/codemirror-maude.js"></script>
+</head>
+
+<body style="background-color: #505050; height: 100%;" onload="initialize()">
+	<div id="step0" class="container">
+		<br>
+		<div class="panel panel-default elpPanel elpTextCenter">
+  			<div class="panel-body">
+    			<h1 class="elpTitle">Inspecting Rewriting Logic Computations <br/> (in a parametric and stepwise way)</h1>
+    			<hr class="elpHR">
+    			<a class="elpLink" href="http://www.dsic.upv.es/users/elp/alpuente.html">Mar&iacute;a Alpuente</a><span class="elpLink">,</span> 
+				<a class="elpLink" href="http://sole.dimi.uniud.it/~demis.ballis/">Demis Ballis</a><span class="elpLink">,</span>
+				<a class="elpLink" href="http://www.dsic.upv.es/~ffrechina/">Francisco Frechina</a>
+				<span class="elpLink">and</span>
+				<a class="elpLink" href="http://www.dsic.upv.es/~jsapina/">Julia Sapiña</a><span class="elpLink">.</span><br />
+  			</div>
+		</div>
+		
+		<div class="panel panel-primary elpPanel">
+        	<div class="panel-heading elpPanelHeader">
+          		<h3 class="panel-title elpTitlePanel">Abstract</h3>
+        	</div>
+        	<div class="panel-body">
+         		<p>Trace inspection is concerned with techniques that allow the trace content to be searched for specific components. This paper 
+				presents a rich and highly dynamic, parameterized technique for the trace inspection of Rewriting Logic theories that allows 
+				the non-deterministic execution of a given unconditional rewrite theory to be followed up in different ways. Using this 
+				technique, an analyst can browse, slice, filter, or search the traces as they come to life during the program execution. 
+				Starting from a selected state in the computation tree, the navigation of the trace is driven by a user-defined, inspection 
+				criterion that specifies the required exploration mode. By selecting different inspection criteria, one can automatically 
+				derive a family of practical algorithms such as program steppers and more sophisticated dynamic trace slicers that facilitate 
+				the dynamic detection of control and data dependencies across the computation tree. Our methodology, which is implemented 
+				in the Anima graphical tool, allows users to capture the impact of a given criterion thereby facilitating the detection of 
+				improper program behaviors.</p>
+        	</div>
+      	</div>
+      	
+      	<div class="panel panel-primary elpPanel">
+        	<div class="panel-heading elpPanelHeader">
+          		<h3 class="panel-title elpTitlePanel">Anima Step by Step</h3>
+        	</div>
+        	<div class="panel-body">
+         		<p>Anima allows a program to be animated by following these steps:<br/><br/>
+				<b><span class="glyphicon glyphicon-hand-right"></span>&nbsp;&nbsp;Provide the Maude input program and initial state.</b><br/>
+				To begin, insert a Maude program and an initial call. Some example programs 
+				are	provided for demonstration purposes.<br/><br/>
+				<b><span class="glyphicon glyphicon-hand-right"></span>&nbsp;&nbsp;Program Animation Phase. </b><br/>
+				The tool supports three inspection strategies, namely: Interactive Stepping, 
+				Partial Stepping, and Forward Trace Slicing. You can expand or fold nodes of the search tree by right-clicking on 
+				them with the mouse and by selecting the "Expand/Fold Node" options from the context menu. 
+				Also state fragments can be specified by highlighting the symbols of interest within the desired leaf of the tree.</p>
+				<button type="button" class="btn btn-primary center-block w120" onclick="from0to1()">Start</button>
+        	</div>
+      	</div>
+      	
+      	<div class="panel panel-default elpPanel">
+  			<div class="panel-body elpPanelSponsor">
+    			<a target="_blank" title="FEDER" href="http://www.micinn.es/portal/site/MICINN/menuitem.6f2062042f6a5bc43b3f6810d14041a0/?vgnextoid=bdf38a9d84518210VgnVCM1000001d04140aRCRD">
+				<img class="elpSponsor" src="img/logos/feder.png" alt="FEDER" /></a>
+  		
+				<a target="_blank" title="MINECO" href="http://www.mineco.gob.es">
+				<img class="elpSponsor" src="img/logos/mineco.png" alt="MINECO" /></a>
+  			
+				<a target="_blank" title="MICINN" href="http://www.micinn.es/">
+				<img class="elpSponsor" src="img/logos/micinn.png" alt="MICINN" /></a>
+   
+				<a target="_blank" title="GVA" href="http://www.edu.gva.es/es/default.asp">
+				<img class="elpSponsor" src="img/logos/gva.png" alt="GVA" /></a>
+   
+				<a target="_blank" title="UPV" href="http://www.upv.es/index-en.html">
+				<img class="elpSponsor" src="img/logos/upv.png" alt="UPV" /></a>
+   
+				<a target="_blank" title="DSIC" href="http://www.dsic.upv.es/indexI.pl">
+				<img class="elpSponsor" src="img/logos/dsic.png" alt="DSIC" /></a>
+  			</div>
+		</div>
+	</div>
+	<div id="step1" class="container">
+	<br>
+		<div class="panel panel-primary elpPanel">
+        	<div class="panel-heading elpPanelHeader">
+          		<h3 class="panel-title elpTitlePanel">Provide the Maude input program and initial state</h3>
+          		<div class="elpToolBarButton elpHelpButton pull-right" onclick="helpStep1()"><span style="margin-left: 5px;">?</span></div>
+        	</div>
+        	<div class="panel-body">
+        		<div id="alertStep1" class="alert alert-danger alertPanel" style="display: none; border: 2px solid;">
+        			<button type="button" class="close" onclick="$('#alertStep1').hide()">&times;</button>
+        			<span id="alertStep1Text"></span>
+        		</div>
+         		<table style="width: 100%;">
+         			<tr>
+         				<th>
+         				<select id="selectExample" class="selectpicker" data-style="btn-primary" data-width="100%" style="border: 2px solid black;" onchange="loadProgram()">
+  							<option value="autofix">Autofix Example</option>
+                            <option value="bank">Bank Model*</option>
+							<option value="fblocks">Blocks World*</option>
+							<option value="brp">Bounded Retransmission Protocol*</option>
+							<option value="container">Container Terminal</option>
+							<option value="river-crossing">Crossing-River</option>
+                			<option value="dekker">Dekker's Algorithm*</option>
+                			<option value="protocol">Fault-tolerant Protocol</option>
+							<option value="fibonacci">Fibonacci</option>
+							<option value="maude-npa">Maude-NPA</option>
+  							<option value="maze-collide">Maze (with collision)*</option>
+  							<option value="minmax">MinMax</option>
+							<option value="philo">Philosophers*</option>
+							<option value="protein">Protein</option>
+							<option value="rent">Rent-a-car*</option>
+                            <option value="semaphore">Semaphore</option>
+                            <option value="stock">Stock Exchange*</option>
+							<option value="stock-oo">Stock Exchange (OO)*</option>
+                            <option value="web-tlr">Webmail Application*</option>
+							<option value="wolfram30">Wolfram Rule 30</option>
+							<option value="none" selected="selected">Empty (upload file or write it yourself)</option>
+						</select>
+						</th>
+						<th style="width: 132px;">
+         					<span id="bUpload" class="btn btn-primary btn-file pull-right w120" style="display: table-cell; margin-left: 10px; margin-top: -10px;">Upload<input id="fileUpload" type="file" accept=".zip,.maude" name="file"/></span>
+         				</th>
+         			</tr>
+         		</table>
+         		<textarea id="taProgram" placeholder="Write your program here."></textarea>
+         		<p></p>
+         		<textarea id="taState" class="form-control step1TextArea hyphenate" rows="10" placeholder="Write your initial state here."></textarea>
+				<table style="width: 100%;">
+         			<tr>
+         				<th><button id="bBack1" type="button" class="btn btn-primary pull-left w80" onclick="from1to0()"><span class="glyphicon glyphicon-backward elpIcon"></span></button></th>
+         				<th style="width: 100%; padding-left: 20px; padding-right: 20px;">
+         					<div style="height: 36px;">
+         						<div id="progressBarOuter" class="progress" style="display: show;">
+  									<div id="progressBarInner" class="progress-bar" role="progressbar" aria-valuenow="60" aria-valuemin="0" aria-valuemax="100"></div>
+								</div>
+								<div id="loader1" style="display: table; margin: 0 auto;">
+									<div id="blockG_1" class="loader_blockG"></div>
+									<div id="blockG_2" class="loader_blockG"></div>
+									<div id="blockG_3" class="loader_blockG"></div>
+								</div>
+							</div>
+         				</th>
+         				<th><button id="bNext1" type="button" class="btn btn-primary pull-right w100" onclick="from1to2()"><span class="glyphicon glyphicon-forward elpIcon"></span></button></th>
+         			</tr>
+         		</table>
+        	</div>
+      	</div>
+      	<div id="myParseWindow" class="modal fade" tabindex="-1" style="overflow: hidden;">
+    		<div class="modal-dialog" style="width: 900px;">
+      			<div id="parseWindowWrapper" class="modal-content elpPanel">
+        			<div id="parseWindowTitle" class="modal-header">
+        				<button id="bCloseParseWindow" type="button" class="close" data-dismiss="modal" style="opacity: initial; color: white;">&times;</button>
+        				<h4 id="spanParseWindowTitle" class="modal-title" style="font-family: Georgia, 'Times New Roman', Times, serif;">Maude Error Output</h4>
+        			</div>
+        			<div id="parseWindowContent1" class="modal-body elpWindow" style="padding: 20px;">
+        				<div id="parseWindowContent2" class="hyphenate" style="font-family: monospace;"></div>
+        			</div>
+        		</div>
+    		</div>
+  		</div>
+	</div>
+	<div id="step2">
+		<div id="elpToolBar">
+			<button id="elpButtonBack" class="btn btn-primary pull-left" onclick="from2to1()"><span id="elpIconBackward" class="glyphicon glyphicon-backward"></span></button>
+			<!--<span id="elpToolTitle">Anima</span>-->
+			<div class="dropdown pull-right">
+          		<button id="elpButtonOptions" class="btn btn-primary dropdown-toggle" data-toggle="dropdown" data-hover="dropdown" onmouseover="hideContextMenu()"><span id="elpIconOptions" class="glyphicon glyphicon-cog"></span></button>
+          		<ul class="dropdown-menu elpPanel" style="margin-top: 5px; margin-right: 2px; width: 200px;">
+            		<li id="mode1" class="elpMenuOption"><a onclick="menuInteractive()"><span id="opIScheck" class="pull-left">✔</span>Interactive stepper</a></li>
+            		<li id="mode2" class="elpMenuOption"><a onclick="menuPartial()"><span id="opPScheck" class="pull-left" style="display: none;">✔</span>Partial stepper</a></li>
+            		<li id="mode3" class="elpMenuOption"><a onclick="menuForward()"><span id="opFWcheck" class="pull-left" style="display: none;">✔</span>Forward slicer</a></li>
+            		<li class="divider elpDivider" style="height: 2px; background-color: black;"></li>
+            		<li class="elpMenuOption"><a onclick="menuInstrumentedSteps()"><span id="opINcheck" class="pull-left" style="display: none;">✔</span>Instrumentation steps</a></li>
+            		<li class="elpMenuOption"><a onclick="menuMetaLevelView()"><span id="opVWcheck" class="pull-left" style="display: none;">✔</span>Meta-level view</a></li>
+            		<li class="elpMenuOption"><a onclick="menuStateLabels()"><span id="opSLcheck" class="pull-left">✔</span>State labels</a></li>
+            		<li class="elpMenuOption"><a onclick="menuRuleLabels()"><span id="opRLcheck" class="pull-left">✔</span>Rule labels</a></li>
+            		<li class="elpMenuOption"><a onclick="menuRedexes()"><span id="opRXcheck" class="pull-left">✔</span>Redex</a></li>
+            		<li class="divider elpDivider" style="height: 2px; background-color: black;"></li>
+            		<li class="elpMenuOption"><a onclick="menuShowProgram()">Show Maude program</a></li>
+            		<li class="elpMenuOption"><a onclick="menuRestoreTree()">Restore original tree</a></li>
+            		<li class="elpMenuOption"><a onclick="menuClearCriteria()">Clear all criteria</a></li>
+            		<li class="divider elpDivider" style="height: 2px; background-color: black;"></li>
+            		<li class="elpMenuOption"><a onclick="menuDrawGraph()">Draw computation graph</a></li>
+            		<li id="drawSlicedGraph" class="elpMenuOption"><a id="drawSlicedGraphText" onclick="menuDrawSlicedGraph()">Draw abstract graph</a></li>
+            		<li class="divider elpDivider" style="height: 2px; background-color: black;"></li>
+            		<li class="elpMenuOption"><a onclick="menuHelp()">Help</a></li>
+          		</ul>
+        	</div>
+		</div>
+		<div id="myWorkspace">
+			<div style="z-index: 99; position: absolute; top: 30px; width: 100%;">
+				<div id="alertStep2" class="alert alert-danger alertPanel" style="display: none; margin-left: auto; margin-right: auto; border: 2px solid;">
+        			<strong>No expand possible:</strong>&nbsp; no rule or equation matches the state.
+        		</div>
+      		</div>	
+			<div id="myTreeWrapper"><div id="myTreeContainer"></div><div id="testHeight" class="animaNodeTest hyphenate"></div></div>
+			<div id="zoom" style="position: absolute; top: 5px; left: 5px; z-index: 99; font-family: tahoma; font-size: 12px; font-weight: bold;">
+				Zoom: <span id="zoomOut" title="Zoom out" onclick="zoomOut()" style="cursor: pointer;"> - </span><span id="zoomValue" title="Current zoom value. Press here to reset to 100%." onclick="restoreZoom()" style="cursor: pointer;">100</span>%<span id="zoomIn" title="Zoom in" onclick="zoomIn()" style="cursor: pointer;"> + </span>
+			</div>
+			<div id=colorsContainer>
+				<div id="colorDefault" class="elpColorPicker" title="Default nodes background color." style="background-color: #FFFFFF;"></div>
+				<div id="colorInstrumented" class="elpColorPicker" title="Instrumentation nodes background color." style="background-color: #8CFFC5;"></div>
+				<div id="colorSliced" class="elpColorPicker" title="Redundant nodes background color." style="background-color: #D1D1D1;"></div>
+				<div id="colorParentSelected" class="elpColorPicker" title="Parent nodes background color." style="background-color: #FFF2A8;"></div>
+				<div id="colorSelected" class="elpColorPicker" title="Selected node background color." style="background-color: #FBEC5D;"></div>
+			</div>
+			<div id="loader2" class="center-block">
+				<div id="blockG_1" class="loader_blockG" style="height: 25px;"></div>
+				<div id="blockG_2" class="loader_blockG" style="height: 25px;"></div>
+				<div id="blockG_3" class="loader_blockG" style="height: 25px;"></div>
+			</div>
+			<input type="text" id="queryInput" placeholder="Enter your query here and press enter.">
+			<div id="contextMenu" class="dropdown">
+    			<ul class="dropdown-menu elpPanel" style="display:block;position:static;margin-bottom:5px;background-color: #FFFFE0!important;">
+        			<li id="menuExpandNode" class="elpContextMenuOption"><a onclick="menuExpandNode()">Expand node</a></li>
+        			<li id="menuExpandSubTree" class="elpContextMenuOption"><a onclick="menuExpandSubTree()">Expand subtree (<span id="expandValue">3</span>-depth):</a></li>
+        			<li id="menuExpandSlider" class="elpContextMenuOption">
+        			<div style="width: 100%;"><div class="fakeBar"></div><div id="expandSlider" class="slider slider-horizontal" style="height: 0px;"><input type="text" class="span2" id="sl1"></div></div>
+        			</li>
+        			<li id="menuFoldNode" class="elpContextMenuOption"><a onclick="menuFoldNode()">Fold node</a></li>
+        			<li class="divider elpDivider"><a onclick=""></a></li>
+        			<li id="menuShowState" class="elpContextMenuOption"><a onclick="menuShowState()">Show state information</a></li>
+        			<li id="menuShowTransition" class="elpContextMenuOption"><a onclick="menuShowTransition()">Show transition information</a></li>
+        			<li id="menuShowTrace" class="elpContextMenuOption"><a onclick="menuShowTrace()">Show trace information</a></li>
+        			<li class="divider elpDivider"><a onclick=""></a></li>
+        			<li id="menuInspectCondition" class="elpContextMenuOption"><a onclick="menuInspectCondition()">Inspect condition</a></li>
+        			<li id="menuInspectConditionSlice" class="elpContextMenuOption"><a onclick="menuInspectConditionSlice()">Inspect condition slice</a></li>
+        			<li class="divider elpDivider"><a onclick=""></a></li>
+        			<li id="menuExportTrace" class="elpContextMenuOption"><a onclick="menuExportTrace()">Analyze trace</a></li>
+        			<li id="menuDrawTerm" class="elpContextMenuOption"><a onclick="menuDrawTerm()">Draw meta-term</a></li>
+        			<li id="menuStatistics" class="elpContextMenuOption"><a onclick="menuStatistics()">Statistics</a></li>
+    			</ul>
+			</div>
+			<div id="myStateWindow" class="modal fade" tabindex="-1" style="overflow: hidden;">
+    			<div class="modal-dialog" style="width: 800px;">
+      				<div id="stateWindowWrapper" class="modal-content elpPanel">
+        				<div id="stateWindowTitle" class="modal-header">
+          					<button id="bCloseStateWindow" type="button" class="close" data-dismiss="modal" style="opacity: initial; color: white;">&times;</button>
+          					<h4 id="spanStateWindowTitle" class="modal-title" style="font-family: Georgia, 'Times New Roman', Times, serif;">Modal title</h4>
+        				</div>
+        				<div id="stateWindowContent" class="modal-body elpWindow" style="padding: 10px;">
+         					<div id="taInfoTitle">Concrete state:</div>
+         					<div id="taInfo" class="hyphenate"></div>
+         					<div id="taSliceTitle" style="margin-top: 20px;">Abstract state:</div>
+         					<div id="taSlice" class="hyphenate"></div>
+        				</div>
+        			</div>
+    			</div>
+  			</div>
+			<div id="myInfoWindow" class="modal fade" tabindex="-1" style="overflow: hidden;">
+    			<div class="modal-dialog" style="width: 800px;">
+      				<div id="infoWindowWrapper" class="modal-content elpPanel">
+        				<div id="infoWindowTitle" class="modal-header">
+          					<button id="bCloseInfoWindow" type="button" class="close" data-dismiss="modal" style="opacity: initial; color: white;">&times;</button>
+          					<h4 id="spanInfoWindowTitle" class="modal-title" style="font-family: Georgia, 'Times New Roman', Times, serif;">Modal title</h4>
+        				</div>
+        				<div id="infoWindowContent" class="modal-body elpWindow">
+         					<div id="dInfoRuleTitle" style="text-align: left; padding-left: 10px; font-weight: bold;"></div>
+           					<div id="dInfoRule" class="hyphenate" style="word-break: break-all!important; padding-right: 15px; padding-left: 15px; text-align: left; font-family: monospace; margin-top: 5px;"></div>
+           					<div style="height: 10px;"></div>
+           					<div style="text-align: left; padding-left: 10px; font-weight: bold;">Substitution</div>
+	    	       			<div id="dInfoSubstitution" class="hyphenate" style="word-break: break-all!important; padding-right: 15px; padding-left: 15px; text-align: left;  font-family: monospace; margin-top: 5px;"></div>
+	    	       			<div style="height: 10px;"></div>
+    		       			<div id="dInfoPositionTitle" style="text-align: left; padding-left: 10px; font-weight: bold;">Position</div>
+	            			<div id="dInfoPosition" class="hyphenate" style="padding-right: 15px; padding-left: 15px; text-align: left;  font-family: monospace; margin-top: 5px;"></div>
+        				</div>
+        			</div>
+    			</div>
+  			</div>
+  			<div id="myCondWindow" class="modal fade" tabindex="-1" style="overflow: hidden;">
+    			<div class="modal-dialog" style="width: 800px;">
+      				<div id="condWindowWrapper" class="modal-content elpPanel">
+        				<div id="condWindowTitle" class="modal-header">
+          					<button id="bCloseCondWindow" type="button" class="close" data-dismiss="modal" style="opacity: initial; color: white;">&times;</button>
+          					<h4 id="spanCondWindowTitle" class="modal-title" style="font-family: Georgia, 'Times New Roman', Times, serif;">Modal title</h4>
+        				</div>
+        				<div id="condWindowContent" class="modal-body elpWindow">
+         					<div id="dCondList"></div>
+        				</div>
+        			</div>
+    			</div>
+  			</div>
+  			<div id="myCondSliceWindow" class="modal fade" tabindex="-1" style="overflow: hidden;">
+    			<div class="modal-dialog" style="width: 800px;">
+      				<div id="condSliceWindowWrapper" class="modal-content elpPanel">
+        				<div id="condSliceWindowTitle" class="modal-header">
+          					<button id="bCloseCondSliceWindow" type="button" class="close" data-dismiss="modal" style="opacity: initial; color: white;">&times;</button>
+          					<h4 id="spanCondSliceWindowTitle" class="modal-title" style="font-family: Georgia, 'Times New Roman', Times, serif;">Modal title</h4>
+        				</div>
+        				<div id="condSliceWindowContent" class="modal-body elpWindow">
+         					<div id="dCondSliceList"></div>
+        				</div>
+        			</div>
+    			</div>
+  			</div>
+  			<div id="myStatisticsWindow" class="modal fade" tabindex="-1" style="overflow: hidden;">
+    			<div class="modal-dialog" style="width: 800px;">
+      				<div id="statisticsWindowWrapper" class="modal-content elpPanel">
+        				<div id="statisticsWindowTitle" class="modal-header">
+          					<button id="bCloseStatisticsWindow" type="button" class="close" data-dismiss="modal" style="opacity: initial; color: white;">&times;</button>
+          					<h4 id="spanStatisticsWindowTitle" class="modal-title" style="font-family: Georgia, 'Times New Roman', Times, serif;">Statistics of state s<span id="statisticsState"></span></h4>
+        				</div>
+        				<div id="statisticsWindowContent" class="modal-body elpWindow">
+         					<div class="statisticsHeader">Depth (rw steps):&nbsp;&nbsp;<span id="dStatistics1" class="statisticsValue"></span></div>
+           					<div class="statisticsHeader">B-Normalized children states:&nbsp;&nbsp;<span id="dStatistics2" class="statisticsValue"></span></div>
+           					<div class="statisticsHeader">Instrumented children states:&nbsp;&nbsp;<span id="dStatistics3" class="statisticsValue"></span></div>
+           					<div class="statisticsHeader">Total children states:&nbsp;&nbsp;<span id="dStatistics4" class="statisticsValue"></span></div>
+           					<div style="height: 10px;"></div>
+           					<div class="statisticsHeader">Expandable children states:&nbsp;&nbsp;<span id="dStatistics5" class="statisticsValue"></span></div>
+        				</div>
+        			</div>
+    			</div>
+  			</div>
+  			<div id="myTraceWindow" class="modal fade" tabindex="-1" style="overflow: hidden;">
+    			<div class="modal-dialog" style="width: 900px;">
+      				<div id="traceWindowWrapper" class="modal-content elpPanel">
+        				<div id="traceWindowTitle" class="modal-header">
+          					<button id="bCloseTraceWindow" type="button" class="close" data-dismiss="modal" style="opacity: initial; color: white;">&times;</button>
+          					<h4 id="spanTraceWindowTitle" class="modal-title" style="font-family: Georgia, 'Times New Roman', Times, serif;">Trace information</h4>
+        				</div>
+        				<div id="traceWindowContent" class="modal-body elpWindow" style="padding: 0px;">
+        				</div>
+        			</div>
+        			<div id="myTableButtons" style="position: relative;">
+                		<div style="float: left; width: 250px;">
+        					<button id="bExportTrace" type="button" class="btn btn-primary center-block" style="width: 250px;">Export Maude trace to clipboard</button>
+                		</div>
+        				<div style="float: right; width: 250px; ">
+        					<select id="selectTraceMode" class="selectpicker" data-style="btn-primary" data-width="100%" style="border: 2px solid black;" onchange="reloadTrace()">
+          						<option value="trace-large">Extended view</option>
+								<option value="trace-medium">Standard view</option>
+								<option value="trace-small">Compact view</option>
+                			</select>
+                		</div>
+                		<div style="float: right; width: 150px; margin-right: 5px;">
+        					<button id="bTrustedMode" type="button" class="btn btn-primary center-block" style="width: 150px;" onclick="trustedMode()">Trusted mode</button>
+                		</div>
+                	</div>
+    			</div>
+  			</div>
+  			<div id="myProgramWindow" class="modal fade" tabindex="-1" style="overflow: hidden;">
+    			<div class="modal-dialog" style="width: 900px;">
+      				<div id="programWindowWrapper" class="modal-content elpPanel">
+        				<div id="programWindowTitle" class="modal-header">
+          					<button id="bCloseProgramWindow" type="button" class="close" data-dismiss="modal" style="opacity: initial; color: white;">&times;</button>
+          					<h4 id="spanProgramWindowTitle" class="modal-title" style="font-family: Georgia, 'Times New Roman', Times, serif;">Maude Program</h4>
+        				</div>
+        				<div id="programWindowContent" class="modal-body elpWindow" style="padding: 10px;">
+        					<div id="taProgram2" class="hyphenate"></div>
+        				</div>
+        			</div>
+    			</div>
+  			</div>
+		</div>
+	</div>
+</body>
+</html>

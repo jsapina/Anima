@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+
+<!-- 
+Copyright 2014 Extensions of Logic Programming - Universitat Politècnica de València
+
+Permission is hereby granted, free of charge, to any person obtaining a copy of 
+this software and associated documentation files (the "Software"), to deal in 
+the Software without restriction, including without limitation the rights to use, 
+copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the 
+Software, and to permit persons to whom the Software is furnished to do so, 
+subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all 
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, 
+INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A 
+PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT 
+HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION 
+OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE 
+SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+ -->
+ 
+<html>
+<head>
+	<title>Anima Online Stepper Graph</title>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	
+	<link rel="icon" type="image/x-icon" href="./img/favicon.ico">
+	<link href="css/colorpicker.css" rel="stylesheet" media="screen,print">
+	<link href="css/bootstrap.css" rel="stylesheet" media="screen,print">
+    <link href="css/bootstrap-select.css" rel="stylesheet" media="screen,print">
+    <link href="css/elp.css" rel="stylesheet" media="screen,print">
+    <link href="css/anima-graph.css" rel="stylesheet" media="screen,print">
+    
+    <script type="text/javascript" charset="utf-8" src="js/jquery.min.js"></script>
+    <script type="text/javascript" charset="utf-8" src="js/jquery-ui.min.js"></script>
+    <script type="text/javascript" charset="utf-8" src="js/bootstrap.min.js"></script>
+	<script type="text/javascript" charset="utf-8" src="js/bootstrap-select.min.js"></script>
+	<script type="text/javascript" charset="utf-8" src="js/bootstrap-hover-dropdown.min.js"></script>
+	<script type="text/javascript" charset="utf-8" src="js/jquery.colorpicker.js"></script>
+    <script type="text/javascript" charset="utf-8" src="js/d3.min.js"></script>  
+    <script type="text/javascript" charset="utf-8" src="js/anima-graph.js"></script>
+    <script type="text/javascript" charset="utf-8" src="js/anima-graph-ui.js"></script>
+    <script type="text/javascript" charset="utf-8" src="js/anima-utils.js"></script>
+</head>
+
+<body style="background-color: #505050;" onload="initialize()">
+	<div id="elpToolBar">
+		<span id="elpToolTitle"></span>
+		<div class="dropdown pull-right">
+        	<button id="elpButtonOptions" class="btn btn-primary dropdown-toggle" data-toggle="dropdown" data-hover="dropdown"><span id="elpIconOptions" class="glyphicon glyphicon-cog"></span></button>
+        	<ul class="dropdown-menu elpPanel" style="margin-top: 5px; margin-right: 2px; width: 200px;">
+            	<li class="elpMenuOption"><a onclick="menuInstrumentedSteps()"><span id="opINcheck" class="pull-left">✔</span>Instrumentation steps</a></li>
+            	<li class="elpMenuOption"><a onclick="menuRuleLabels()"><span id="opRLcheck" class="pull-left">✔</span>Rule labels</a></li>
+         	</ul>
+       	</div>
+	</div>
+	<div id="graphWorkspace">
+		<div id="myGraphContainer"><canvas id="canvas"></canvas></div>
+		<div id="zoom" style="position: absolute; top: 5px; left: 5px; z-index: 99; font-family: tahoma; font-size: 12px; font-weight: bold;">
+			Zoom: <span id="zoomOut" title="Zoom out" onclick="zoomOut()" style="cursor: pointer;"> - </span><span id="zoomValue" title="Current zoom value. Press here to reset to 100%." onclick="restoreZoom()" style="cursor: pointer;">100</span>%<span id="zoomIn" title="Zoom in" onclick="zoomIn()" style="cursor: pointer;"> + </span>
+		</div>
+		<div id=colorsContainer>
+			<div id="colorDefault" class="elpColorPicker" title="Default nodes background color." style="background-color: #FFFFFF;"></div>
+			<div id="colorInstrumented" class="elpColorPicker" title="Instrumentation nodes background color." style="background-color: #8CFFC5;"></div>
+			<div id="colorSelected" class="elpColorPicker" title="Selected node background color." style="background-color: #FBEC5D;"></div>
+		</div>
+	</div>
+</body>
+</html>

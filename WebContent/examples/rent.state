@@ -1,0 +1,1 @@
+< 'A1 : EconomyCar | available : true , rate : 30 > < 'A3 : MidSizeCar | available : true , rate : 45 > < 'A5 : FullSizeCar | available : true , rate : 70 > < 'C1 : Customer | credit : 50 , suspended : false > < 'C2 : PreferredCustomer | credit : 100 , suspended : false > < 'RG : Register | rentals : 0 , date : 0 >

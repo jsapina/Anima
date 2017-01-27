@@ -1,0 +1,32 @@
+mod CLIENT-SERVER-TRANSF is 
+    inc NAT .
+    sorts Content State Msg Cli Serv Host Data CliName ServName Question Answer .
+    
+    subsorts Msg Cli Serv < State .
+    subsorts CliName ServName < Host .
+    subsorts Nat < Question Answer < Data .
+    
+    ops Srv-A Srv-B : -> ServName .
+    ops Cli-A Cli-B : -> CliName .
+    op null : -> State .
+    op _&_ : State State -> State [assoc comm id: null] .
+    op _<-_ : Host Content -> Msg .
+    op {_,_} : Host Data -> Content .
+    op [_,_,_,_] : CliName ServName Question Answer -> Cli .
+    op na : -> Answer .
+    op [_] : ServName -> Serv .
+    op f : ServName CliName Question -> Answer .
+
+    var C S H : Host .
+    var Q : Question .
+    var A : Answer .
+    var D : Data .
+    var CNT : Content .
+
+    eq [inc] : f(S, C, Q) = Q + 1 .
+    rl [req] : [C, S, Q, na] => [C, S, Q, na] & S <- {C, Q} .
+    rl [reply] : (S <- {C, Q}) & [S] => [S] & (C <- {S, f(S, C, Q)}) .
+    rl [rec] : (C <- {S, D}) & [C, S, Q, A] => [C, S, Q, A] .
+    rl [dupl] : (H <- CNT) => (H <- CNT) & (H <- CNT) .
+    rl [loss] : (H <- CNT) => null .
+endm

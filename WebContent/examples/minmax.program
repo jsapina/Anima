@@ -1,0 +1,34 @@
+mod MINMAX is inc INT .
+sorts NeList List Pair .
+subsorts Nat < List .
+
+op nil : -> List [ctor] .
+op _;_ : List List -> List [ctor assoc] .
+op PAIR : Nat Nat -> Pair .
+op 1st : Pair -> Nat .
+op 2nd : Pair -> Nat .
+
+op Max : Nat Nat -> Nat .
+op Min : Nat Nat -> Nat .
+op minmax : List -> Pair .
+op Maxl : List -> Nat .
+
+var N X Y : Nat .
+var L : List .
+var P : Pair .
+
+crl [Max1] : Max(X,Y) => X if X >= Y .
+crl [Max2] : Max(X,Y) => Y if X < Y .
+
+crl [Min1] : Min(X,Y) => Y if X > Y .
+crl [Min2] : Min(X,Y) => X if X <= Y .
+
+rl [1st] : 1st(PAIR(X , Y )) => X .
+rl [2nd] : 2nd(PAIR(X , Y )) => Y .
+
+rl [minmax1] : minmax(N) =>  PAIR(N,N) .
+rl [minmax2] : minmax(N ; L) => PAIR(Min(N,1st(minmax(L))) , Max(N,2nd(minmax(L)))) . 
+
+rl [MaxL] : Maxl(L) => 1st(minmax(L)) . 
+
+endm

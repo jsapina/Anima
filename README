@@ -1,0 +1,15 @@
+http://safe-tools.dsic.upv.es/anima/
+
+Before running the application, the following files must be configured using you own data:
+
+./src/es/upv/dsic/elp/Anima/MongoDB.java
+./src/es/upv/dsic/elp/Anima/Paths.java
+
+
+Also, MondoDB support is disabled by default. To enable it edit file
+
+./src/es/upv/dsic/elp/Anima/Utils.java
+
+in the following way:
+
+final static boolean USEMONGODB = true;

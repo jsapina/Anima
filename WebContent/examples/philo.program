@@ -1,0 +1,32 @@
+mod PHILO is protecting NAT .
+    sorts Philo Status Chopstick Conf PState .
+    subsorts Philo Chopstick < Conf .
+
+    op ph : Nat Status Nat -> Philo [ctor] .
+    ops think hungry : -> Status [ctor] .
+    op stk : Nat -> Chopstick [ctor] .
+    op none : -> Conf [ctor] .
+    op _;_ : Conf Conf -> Conf [ctor comm assoc id: none] .
+    op <_`,_`,_> : Nat Nat Conf -> PState [ctor] .
+    op left : Nat -> Nat .
+    op right : Nat Nat -> Nat .
+    op collatz : Nat -> Nat .
+    
+    vars P N C : Nat .
+    vars I J : NzNat .
+    vars CF : Conf .
+    
+    eq left(I) = I .
+    eq right(I, N) = s(I rem N) .
+    eq collatz(P) = if P rem 2 == 0 then (P quo 2) else (3 * P + 1) fi .
+
+    rl [wake] : ph(I, think, 0) => ph(I, hungry, 0) .
+    crl [grab] : < P, N, ph(I, hungry, C) ; stk(J) ; CF > => < P, N, ph(I, hungry, C + 1) ; CF >
+        if J == left(I) or J == right(I, N) .
+    rl [stop] : < P, N, ph(I, hungry, 2) ; CF > => < P, N, ph(I, think, 0) ; stk(left(I)) ; stk(right(I, N)) ; CF > .
+    
+    crl [solve] : < P, N, ph(I, think, 0) ; CF > => < collatz(P), N, ph(I, think, 0) ; CF > if P > 1 .
+    crl [join] : < P, N, ph(N, think, 0) ; CF > => < P, N + 1, ph(N, think, 0) ; ph(N + 1, think, 0) ; stk(N + 1) ; CF >
+        if (P rem (4 * N) == 0) or (N rem 3 == 0) .
+    crl [leave] : < P, N, CF ; ph(N, think, 0) ; stk(N) > => < P, sd(N, 1), CF > if N > 2 .
+endm 

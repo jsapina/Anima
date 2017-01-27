@@ -1,0 +1,37 @@
+mod WOLFRAM30 is
+    inc NAT .
+    
+    sorts CellStatus Cell State .
+    
+    op nil : -> Cell .
+    op change : CellStatus -> CellStatus .
+    ops alive dead na : -> CellStatus .
+    op _&_ : Cell Cell -> Cell [ctor assoc id: nil] .
+    op [_,_] : CellStatus CellStatus -> Cell .
+    op {_,_|_} : Nat Nat Cell -> State .
+    
+    vars Ce CeL CeR : Cell .
+    vars M N : Nat .
+    vars L L' X X' R R' : CellStatus .
+    
+    eq [alive] : change(alive) = dead .
+    eq [dead] : change(dead) = alive .
+    
+    eq  [init]     : { N , M | [ alive , na ] } = { 3 , 3 | [ dead , na ] & [ alive , na ] & [ dead , na ] } .
+    ceq [newfirst] : { N , N | nil & [ X , X' ] & CeR } = { s(N) , s(N) | [ dead , na ] & [ X' , na ] & CeR } if X' =/= na .
+    ceq [newlast]  : { N , N | CeL & [ X , X' ] & nil } = { s(N) , s(N) | CeL & [ X' , na ] & [ dead , na ] } if X' =/= na .
+    ceq [update]   : { N , N | CeL & [ X , X' ] & CeR } = { N , N | CeL & [ X' , na ] & [ dead , na ] } if X' =/= na .
+    
+    eq  [next] : { N , N | Ce } = { N , 0 | Ce } [owise] .
+    
+    crl [keep]   : { N , M | CeL & [ L , L' ] & [ X , na ] & [ R , R' ] & CeR } => { N , s(M) | CeL & [ L , L' ] & [ X , X ] & [ R , R' ] & CeR } if (X == dead and L == R) or (X == alive and L == dead) .
+    crl [change] : { N , M | CeL & [ L , L' ] & [ X , na ] & [ R , R' ] & CeR } => { N , s(M) | CeL & [ L , L' ] & [ X , change(X) ] & [ R , R' ] & CeR } if (X == alive and L == alive) or (X == dead and L =/= R) .
+
+     rl [first1] : { N , M | nil & [ dead , na ] & [ alive , R' ] & Ce } => { N , s(M) | nil & [ dead , alive ] & [ alive , R' ] & Ce } .
+     rl [first2] : { N , M | nil & [ dead , na ] & [ dead , R' ] & Ce } => { N , s(M) | nil & [ dead , dead ] & [ dead , R' ] & Ce } .
+     rl [first3] : { N , M | nil & [ alive , na ] & Ce } => { N , s(M) | nil & [ alive , alive ] & Ce } .
+     
+     rl [last1] : { N , M | CeL & [ alive , L' ] & [ X , na ] & nil } => { N , s(M) | CeL & [ alive , L' ] & [ X , change(X) ] & nil } .
+     rl [last2] : { N , M | CeL & [ dead , L' ] & [ X , na ] & nil } => { N , s(M) | CeL & [ dead , L' ] & [ X , X ] & nil } .
+     
+endm

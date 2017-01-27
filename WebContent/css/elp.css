@@ -1,0 +1,399 @@
+/*
+Copyright 2014 Extensions of Logic Programming - Universitat Politècnica de València
+
+Permission is hereby granted, free of charge, to any person obtaining a copy of 
+this software and associated documentation files (the "Software"), to deal in 
+the Software without restriction, including without limitation the rights to use, 
+copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the 
+Software, and to permit persons to whom the Software is furnished to do so, 
+subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all 
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, 
+INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A 
+PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT 
+HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION 
+OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE 
+SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+*/
+
+*::-webkit-input-placeholder {
+    color: gray;
+}
+*:-moz-placeholder {
+    /* FF 4-18 */
+    color: gray;
+}
+*::-moz-placeholder {
+    /* FF 19+ */
+    color: gray;
+}
+*:-ms-input-placeholder {
+    /* IE 10+ */
+    color: gray;
+}
+
+html, body {height: 100% !important;}
+
+.w80 {
+	width: 80px;
+}
+
+.w100 {
+	width: 100px;
+}
+
+.w120 {
+	width: 120px;
+}
+
+.elpError {
+	color: red;
+	font-weight: bold;
+}
+
+.elpTextCenter {
+	text-align: center;
+}
+
+.elpSmallCaps {
+	font-variant: small-caps;
+}
+
+.elpTitle {
+	font-size: 3em;
+	font-weight: bold;
+	font-family: Georgia, "Times New Roman", Times, serif;
+}
+
+.elpTitlePanel {
+	font-variant: small-caps;
+	font-size: 20px;
+	font-family: Georgia, "Times New Roman", Times, serif;
+}
+
+.elpLink {
+	font-size: 1.2em; 
+	font-family: Georgia, 'Times New Roman', Times, serif;
+}
+
+.elpHR {
+	color: #000000; 
+	background-color: #000000; 
+	width: 5%;
+	height: 2px;
+}
+
+.elpPanel {
+	border: 2px solid black;
+	border-radius: 3px;
+}
+
+.elpPanelHeader {
+	border-radius: 0px;
+	border-bottom: 2px solid black !important;
+}
+
+.elpPanelSponsor {
+	padding: 2px;
+	text-align: center;
+}
+
+.elpSponsor {
+	margin-left: 10px;
+	margin-right: 10px;
+	margin-top: 2px;
+	margin-bottom: 2px;
+	border: 0px;
+}
+
+.elpIcon {
+	font-variant: normal;
+}
+
+span.context{
+	line-height: 14px;
+	background-image: url(../img/underline.png);
+	background-position: bottom left;
+    background-repeat: repeat-x;
+}
+
+span.highlighted {
+	background-color: rgba(255,0,0,0.4);
+	line-height: 14px;
+}
+
+span.origin {
+	background-color: rgba(0,0,255,0.4);
+	line-height: 14px;
+}
+
+span.redex{
+	line-height: 15px;
+	background-image: url(../img/underline.png);
+	background-position: bottom left;
+	background-repeat: repeat-x;
+}
+
+/* BUTTONS */
+.elpToolBarButton {
+	position: relative;
+	width: 32px;
+	height: 32px;
+	cursor: pointer;
+	margin-top: 4px;
+}
+
+.elpHelpButton {
+	margin-top: -26px; 
+	margin-right: -10px;
+	font-family: tahoma;
+	font-weight: bold;
+	font-size: 36px;
+	line-height: 31px;
+	text-shadow: 0 0 2px black, 0 0 2px black, 0 0 2px black, 0 0 2px black, 0 0 2px black, 0 0 2px black, 0 0 2px black, 0 0 2px black, 0 0 2px black, 0 0 2px black, 0 0 2px black, 0 0 2px black, 0 0 2px black, 0 0 2px black, 0 0 2px black, 0 0 2px black, 0 0 2px black, 0 0 2px black, 0 0 2px black, 0 0 2px black;
+}
+
+.elpUploadButton {
+	display: table-cell; 
+	margin-left: 10px; 
+	margin-top: -10px;
+}
+/* END BUTTONS*/
+
+/* AJAX LOADER */
+.loader_blockG{
+	background-color:#428bca;
+	border:1px solid #000000;
+	float:left;
+	height:36px;
+	margin-left:3px;
+	width:10px;
+	opacity:0.1;
+	-moz-animation-name:bounceG;
+	-moz-animation-duration:1.2s;
+	-moz-animation-iteration-count:infinite;
+	-moz-animation-direction:linear;
+	-moz-transform:scale(0.7);
+	-webkit-animation-name:bounceG;
+	-webkit-animation-duration:1.2s;
+	-webkit-animation-iteration-count:infinite;
+	-webkit-animation-direction:linear;
+	-webkit-transform:scale(0.7);
+	-ms-animation-name:bounceG;
+	-ms-animation-duration:1.2s;
+	-ms-animation-iteration-count:infinite;
+	-ms-animation-direction:linear;
+	-ms-transform:scale(0.7);
+	-o-animation-name:bounceG;
+	-o-animation-duration:1.2s;
+	-o-animation-iteration-count:infinite;
+	-o-animation-direction:linear;
+	-o-transform:scale(0.7);
+	animation-name:bounceG;
+	animation-duration:1.2s;
+	animation-iteration-count:infinite;
+	animation-direction:linear;
+	transform:scale(0.7);
+}
+
+#blockG_1{
+	-moz-animation-delay:0.36s;
+	-webkit-animation-delay:0.36s;
+	-ms-animation-delay:0.36s;
+	-o-animation-delay:0.36s;
+	animation-delay:0.36s;
+}
+
+#blockG_2{
+	-moz-animation-delay:0.48s;
+	-webkit-animation-delay:0.48s;
+	-ms-animation-delay:0.48s;
+	-o-animation-delay:0.48s;
+	animation-delay:0.48s;
+}
+
+#blockG_3{
+	-moz-animation-delay:0.6s;
+	-webkit-animation-delay:0.6s;
+	-ms-animation-delay:0.6s;
+	-o-animation-delay:0.6s;
+	animation-delay:0.6s;
+}
+
+@-moz-keyframes bounceG{
+	0%{-moz-transform:scale(1.2);opacity:1}
+	100%{-moz-transform:scale(0.7);opacity:0.1}
+}
+
+@-webkit-keyframes bounceG{
+	0%{-webkit-transform:scale(1.2);opacity:1}
+	100%{-webkit-transform:scale(0.7);opacity:0.1}
+}
+
+@-ms-keyframes bounceG{
+	0%{-ms-transform:scale(1.2);opacity:1}
+	100%{-ms-transform:scale(0.7);opacity:0.1}
+}
+
+@-o-keyframes bounceG{
+	0%{-o-transform:scale(1.2);opacity:1}
+	100%{-o-transform:scale(0.7);opacity:0.1}
+}
+
+@keyframes bounceG{
+	0%{transform:scale(1.2);opacity:1}
+	100%{transform:scale(0.7);opacity:0.1}
+}
+
+/* END AJAX LOADER */
+
+/* START FILE UPLOAD BUTTON */
+.btn-file {
+    position: relative;
+    overflow: hidden;
+}
+
+.btn-file input[type=file] {
+    position: absolute;
+    top: 0;
+    right: 0;
+    min-width: 100%;
+    min-height: 100%;
+    font-size: 999px;
+    text-align: right;
+    filter: alpha(opacity=0);
+    opacity: 0;
+    background: red;
+    cursor: inherit;
+    display: block;
+}
+
+/* END FILE UPLOAD BUTTON */
+
+/* WORKSPACE */
+#myWorkspace {
+	position: absolute;
+	border: 2px solid black;
+	background-color: white;
+	color: black;
+	top: 50px;
+	bottom: 10px;
+	left: 10px;
+	right: 10px;
+	overflow: hidden;
+}
+
+#elpToolBar {
+	height: 42px;
+	border: 2px solid black;
+	background-color: #428bca;
+	text-align: center;	
+}
+
+#elpButtonBack{
+	background-color: rgba(0,0,0,0);
+	margin-top: 1px;
+	margin-left: 1px;
+	border-color: rgba(0,0,0,0);
+	height: 36px;
+}
+
+#elpButtonBack:active{
+	-webkit-box-shadow: none;
+	-moz-box-shadow: none;
+	box-shadow: none;
+}
+
+#colorsContainer {
+ 	position: absolute;
+ 	bottom: 0px;
+ 	left: 5px;
+ 	display: inline-block;
+ 	z-index: 99;
+}
+
+.elpColorPicker {
+	border: 2px solid black;
+	width: 25px;
+	height: 25px;
+	padding: 2px;
+	display: inline-block;
+	cursor: pointer;
+}
+
+.elpMenuOption {
+	text-align: right;
+}
+
+#elpButtonOptions {
+	background-color: rgba(0,0,0,0);
+	margin-top: 1px;
+	margin-right: 1px;
+	border-color: rgba(0,0,0,0);
+	height: 36px;
+}
+
+#elpToolTitleItalic{
+	color: white; 
+	font-family: serif; 
+	font-weight: bold; 
+	font-size: 32px; 
+	font-style: italic;
+	letter-spacing: 5px;
+	line-height: 38px;
+	text-shadow: 0 0 2px black, 0 0 2px black, 0 0 2px black, 0 0 2px black, 0 0 2px black, 0 0 2px black, 0 0 2px black, 0 0 2px black, 0 0 2px black, 0 0 2px black, 0 0 2px black, 0 0 2px black, 0 0 2px black, 0 0 2px black, 0 0 2px black, 0 0 2px black, 0 0 2px black, 0 0 2px black, 0 0 2px black, 0 0 2px black;
+}
+
+#elpToolTitle {
+	color: white; 
+	font-family: tahoma; 
+	font-variant: small-caps; 
+	font-weight: bold; 
+	font-size: 30px; 
+	line-height: 38px;
+	text-shadow: 0 0 2px black, 0 0 2px black, 0 0 2px black, 0 0 2px black, 0 0 2px black, 0 0 2px black, 0 0 2px black, 0 0 2px black, 0 0 2px black, 0 0 2px black, 0 0 2px black, 0 0 2px black, 0 0 2px black, 0 0 2px black, 0 0 2px black, 0 0 2px black, 0 0 2px black, 0 0 2px black, 0 0 2px black, 0 0 2px black;
+}
+
+#elpIconBackward {
+	font-variant: normal;
+	font-size: 31px;
+	margin-top: -10px;
+	margin-left: -13px;
+	text-shadow: 0 0 2px black, 0 0 2px black, 0 0 2px black, 0 0 2px black, 0 0 2px black, 0 0 2px black, 0 0 2px black, 0 0 2px black, 0 0 2px black, 0 0 2px black, 0 0 2px black, 0 0 2px black, 0 0 2px black, 0 0 2px black, 0 0 2px black, 0 0 2px black, 0 0 2px black, 0 0 2px black, 0 0 2px black, 0 0 2px black;
+}
+
+#elpButtonOptions:active{
+	-webkit-box-shadow: none;
+	-moz-box-shadow: none;
+	box-shadow: none;
+}
+
+#elpIconOptions {
+	font-variant: normal;
+	font-size: 31px;
+	margin-top: -9px;
+	margin-right: -10px;
+	text-shadow: 0 0 2px black, 0 0 2px black, 0 0 2px black, 0 0 2px black, 0 0 2px black, 0 0 2px black, 0 0 2px black, 0 0 2px black, 0 0 2px black, 0 0 2px black, 0 0 2px black, 0 0 2px black, 0 0 2px black, 0 0 2px black, 0 0 2px black, 0 0 2px black, 0 0 2px black, 0 0 2px black, 0 0 2px black, 0 0 2px black;
+}
+
+.elpDivider {
+	height: 2px !important;
+	background-color: black !important;
+}
+
+.hyphenate {
+    -ms-word-break: break-all;
+    word-break: break-all;
+    word-break: break-word;
+    -webkit-hyphens: auto;
+    -moz-hyphens: auto;
+    -ms-hyphens: auto;
+    hyphens: auto;
+}
+
+.elpWindow {
+    overflow-y: auto;
+}

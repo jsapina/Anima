@@ -1,0 +1,49 @@
+mod MAZE is
+  pr NAT .
+
+  sorts Pos List State Player .
+  subsort Pos < List .
+
+  op p1 : -> Player .
+  op p2 : -> Player .
+  op nil : -> List [ctor] .
+  op size : -> Nat .
+  op wall : -> List .
+  op exit : -> List .
+  op dead : -> List .
+  op empty : -> State [ctor] .
+  op next : List Nat -> Pos .
+  op isOk : List -> Bool .
+  op _in_ : Pos List -> Bool .
+  op `{_,_,_`} : Player List Nat -> State [ctor] .
+  op __ : List List -> List [ctor assoc id: nil] .
+  op <_,_> : Nat Nat -> Pos [ctor] .
+  op _||_ : State State -> State [ctor assoc comm id: empty] .
+
+  vars X Y N M M1 M2 : Nat .
+  var P Q : Pos .
+  vars L L1 L2 : List .
+  var PY PY1 PY2 : Player .
+
+  eq [s] : size = 5 . --- Assumption: 5x5 maze
+  eq [wl] : wall = < 1,3 > < 1,5 > < 2,1 > < 2,4 > < 2,5 > < 3,3 > < 3,4 > < 4,2 > < 4,3 > < 5,4 > .
+
+  eq [ok] : isOk(L < X,Y >) = X >= 1 and Y >= 1 and X <= size and Y <= size 
+            and not(< X,Y > in L) and not(< X,Y > in wall) .
+
+  ceq [c1] : P in L = true if L1 P L2 := L .
+  eq [c2] : P in L = false [owise] .
+  
+  rl [downN] : next(L < X,Y >,N) => < X, Y + N > .
+  rl [leftN] : next(L < X,Y >,N) => < sd(X, N), Y > .
+  rl [upN] : next(L < X,Y >,N) => < X, sd(Y, N) > .
+  rl [rightN] : next(L < X,Y >,N) => < X + N, Y > .
+  
+  crl [walk1] : {p1, L , M } => {p1, L P , M + 1 } if next(L,1) => P /\ isOk(L P) .
+  crl [walk2] : {p2, L , M } => {p2, L P , M + 1 } if next(L,1) => P /\ isOk(L P) .
+  crl [jump1] : {p1, L , M } => {p1, L P , M + 2 } if next(L,2) => P /\ isOk(L P) . --- only p1 can jump
+  
+  rl  [eject] : {PY1, L1 < X,Y > , M1 } || {PY2, L2 < X,Y >, M2 } => empty .
+  crl [exit] : {PY, L < X,X >, M} => {PY, exit, M} if X == size .
+  eq [dead] : {PY, L < X,X >, 3} = {PY, dead, 0} .
+endm

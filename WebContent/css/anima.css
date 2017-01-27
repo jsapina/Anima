@@ -1,0 +1,317 @@
+/*
+Copyright 2014 Extensions of Logic Programming - Universitat Politècnica de València
+
+Permission is hereby granted, free of charge, to any person obtaining a copy of 
+this software and associated documentation files (the "Software"), to deal in 
+the Software without restriction, including without limitation the rights to use, 
+copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the 
+Software, and to permit persons to whom the Software is furnished to do so, 
+subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all 
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, 
+INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A 
+PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT 
+HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION 
+OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE 
+SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+*/
+
+.white, .white a {
+  color: #fff;
+}
+
+.condButton {
+	width: 80px;
+	height: 30px;
+	padding: 0px;
+}
+
+.animaCentered {
+	text-align: center;
+}
+
+.animaLogo {
+	font-variant: small-caps;
+	font-size: 15px;
+}
+
+.iJulienne1 {
+	font-family: Georgia, "Times New Roman", Times, serif;
+	font-style: italic;
+}
+
+.iJulienne2 {
+	font-family: 'lucida grande',tahoma,verdana,arial,sans-serif;
+	font-variant: small-caps;
+	font-size: 15px;
+}
+
+.iJulienne3 {
+	font-variant: small-caps;
+	font-size: 13px;
+}
+
+.step1TextArea {
+	margin-top: 5px; 
+	margin-bottom: 10px; 
+	border: 2px solid black;
+	font-family: monospace;
+	font-size: 12px;
+	line-height: 1.5;
+	cursor: auto!important;
+}
+
+#step1 {
+	display: none;
+}
+
+#step2 {
+	display: none;
+	width: 100%;
+	height: 100%;
+	position: relative;
+	border: 0px solid black;
+	padding: 10px;
+}
+
+#animaButtonHelp {
+	margin-top: -26px; 
+	margin-right: -10px;
+	font-family: tahoma;
+	font-weight: bold;
+	font-size: 36px;
+	line-height: 31px;
+	text-shadow: 0 0 2px black, 0 0 2px black, 0 0 2px black, 0 0 2px black, 0 0 2px black, 0 0 2px black, 0 0 2px black, 0 0 2px black, 0 0 2px black, 0 0 2px black, 0 0 2px black, 0 0 2px black, 0 0 2px black, 0 0 2px black, 0 0 2px black, 0 0 2px black, 0 0 2px black, 0 0 2px black, 0 0 2px black, 0 0 2px black;
+}
+
+#queryInput {
+	position: absolute;
+ 	bottom: 5px;
+ 	right: 5px;
+	width: 500px;
+	height: 25px;
+	z-index: 99;
+	border: 2px solid black;
+	font-family: monospace;
+	font-size: 12px;
+	line-height: 23px;
+	padding-left: 4px;
+}
+
+#contextMenu {
+  position: absolute;
+  display:none;
+  z-index: 99;
+}
+
+.statisticsHeader {
+	text-align: left;
+	padding-left: 10px;
+	font-family: Georgia, 'Times New Roman', Times, serif;
+}
+
+.statisticsValue {
+	font-family: monospace;
+}
+
+/* Result tables */
+table.gridtable {
+	font-family: verdana,arial,sans-serif;
+	font-size: 11px;
+	color:#333333;
+	border-collapse: collapse;
+    border-style: hidden;
+    margin-left: auto;
+	margin-right: auto;
+	table-layout: fixed;
+}
+
+table.gridtable th {
+	padding: 4px;
+	border: 1px solid black;
+	background-color: #BDBDBD;
+}
+
+table.gridtable td {
+	font-family: verdana,arial,sans-serif;
+	font-size: 11px;
+	padding: 4px;
+	border: 1px solid black;
+	background-color: #FFFFFF;
+	line-height: 15px;
+}
+
+table.gridtable th.slicedTraceStep {
+	font-family: verdana,arial,sans-serif;
+	font-size: 11px;
+	padding: 4px;
+	border: 1px solid black;
+	background-color: #FFFFFF;
+	line-height: 15px;
+	font-weight: bold;
+}
+
+table.gridtable td.total {
+	background-color: #F8E1DF;
+}
+
+table.gridtable td.reduction {
+	background-color: #FFA6A6;
+}
+
+dd {
+	text-align: justify;
+	padding-right: 15px;
+}
+
+.helpHeader {
+	font-weight: bold;
+	border-bottom: 2px solid black;
+}
+
+.helpText {
+	padding-left: 20px;
+	padding-right: 20px;
+}
+
+dt {
+	font-family: Georgia, "Times New Roman", Times, serif;
+}
+
+dd {
+	font-family: Georgia, "Times New Roman", Times, serif;
+	padding-left: 10px;
+	padding-right: 10px;
+}
+
+#taInfoTitle {
+	display: none;
+	font-family: Georgia, "Times New Roman", Times, serif;
+}
+
+#taInfo {
+	border: 2px solid black;
+	border-radius: 4px;
+	min-height: 14px;
+	line-height: 16px;
+	font-family: monospace;
+	font-size: 12px;
+	text-align: left;
+	padding: 2px 4px 2px 4px;
+}
+
+#taSliceTitle {
+	display: none;
+	font-family: Georgia, "Times New Roman", Times, serif;
+}
+
+#taSlice {
+	display: none;
+	border: 2px solid black;
+	border-radius: 4px;
+	min-height: 14px;
+	cursor: pointer;
+	line-height: 16px;
+	font-family: monospace;
+	font-size: 12px;
+	text-align: left;
+	padding: 2px 4px 2px 4px;
+}
+
+dd.bulleted {
+	display: list-item;
+	margin-left: 40px;
+	margin-bottom: 5px;
+}
+
+dd.sourcecode {
+	font-family: monospace;
+	font-size: 12px;
+}
+
+span.bulleted {
+	text-align: justify;
+	position: relative; 
+	left: -10px;
+}
+
+span.bulletedLink {
+	text-align: justify;
+	position: relative; 
+	left: -10px;
+	text-decoration:underline;
+	color: blue;
+	cursor: pointer;
+}
+
+span.shaded{
+	color: #CCCCCC !important;
+	font-weight: normal;
+}
+
+span.bullet{
+	color: #AAAAAA !important;
+	font-weight: normal;
+}
+
+#taProgram2 {
+	border: 2px solid black;
+	border-radius: 4px;
+	min-height: 14px;
+	line-height: 16px;
+	font-family: monospace;
+	font-size: 12px;
+	text-align: left;
+	padding: 2px 4px 2px 4px;
+	overflow-y: scroll;
+}
+
+.fakeBar {
+	width: 160px;
+	height: 2px;
+	position: relative;
+	top: 12px;
+	left: 20px;
+	background-color: black;
+	cursor: pointer;
+}
+
+.condListItemH {
+	text-align: left;
+	padding-left: 10px;
+	font-weight: bold;
+}
+
+.condListItem {
+	padding-right: 15px; 
+	padding-left: 15px; 
+	text-align: left;  
+	font-family: monospace; 
+	margin-top: 5px;
+}
+
+.alertPanel {
+	font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+	font-size: 14px;
+	text-align: left;
+    min-width: 300px;
+    text-align: center;
+}
+
+#loader2 {
+    position: absolute;
+    bottom: 5px;
+    left: 49%;
+    z-index: 90;
+    display: none;
+}
+
+.animaDownArrow {
+	position: absolute;
+	width: 10px;
+	height: 10px;
+	cursor: pointer;
+}

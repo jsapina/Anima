@@ -1,0 +1,39 @@
+mod SEMAPHORE is
+    protecting NAT .
+    protecting BOOL .
+
+    --- Type declarations for processes
+    sorts Process PState .
+
+    --- A process has an identifier and status
+    op p_{_} : Nat PState -> Process .
+
+    --- There are four possible states
+    ops idle entering critical exiting : -> PState .
+
+    --- We put all processes together in a set
+    sort PSet .
+    subsort Process < PSet .
+    op empty : -> PSet .
+    op __ : PSet PSet -> PSet [assoc comm id: empty] .
+    eq X:Process X:Process = X:Process . --- Propiedad idempotencia
+
+    --- We define the semaphore type
+    sort Semaphore .
+    subsort Bool < Semaphore .
+
+    --- We put all the processes together with a semaphore to share, 
+    --- which defines the overall situation of our entire system
+    sort GlobalState .
+    op _||_ : Semaphore PSet -> GlobalState .
+
+    --- Variables
+    var S : Semaphore . var PS : PSet . var Id : Nat .
+
+    --- We now give the rules that define the behavior of each process
+    rl [keep_idle] : S || p Id {idle} PS => S || p Id {idle} PS .
+    rl [entering] : S || p Id {idle} PS => S || p Id {entering} PS .
+    rl [critical] : false || p Id {entering} PS => true || p Id {critical} PS .
+    rl [exiting] : S || p Id {critical} PS => S || p Id {exiting} PS .
+    rl [to_idle] : S || p Id {exiting} PS => false || p Id {idle} PS .
+endm

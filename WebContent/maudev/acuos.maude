@@ -1,0 +1,666 @@
+fmod META-LEVEL-AUX is
+    pr STRING .
+    pr NAT .
+    pr CONVERSION .
+    inc META-LEVEL .
+
+    vars N X K : Nat .
+    var T : Term .
+    var V : Variable .
+    var F : Qid .
+    var C : Constant .
+    var T1 : Term .
+    var TL : TermList .
+    var TS : TermSet .
+    var TB : TermBag .
+    var NETL : TermList .
+    var MOD : Module .
+    var OPDS OPDS' : OpDeclSet .
+    var AS : AttrSet .
+    var AT : Attr .
+    var SUB : Substitution .
+
+    *** The inference rules as expressed in the paper require a composition of
+    *** substitutions in most steps.  Since this can be a costly operation, in
+    *** practice we limit its application to where it is *really* needed: when
+    *** a solution is found.  By using a list of substitutions, we can delay
+    *** substitution composition until that moment.
+    sort SubstitutionList .
+    subsort Substitution < SubstitutionList .
+    op nil : -> SubstitutionList .
+    op __ : SubstitutionList SubstitutionList -> SubstitutionList [assoc id: nil] .
+
+    *** Auxiliar function to construct a (fresh) variable from a natural number
+    op fresh-var : Nat -> Variable .
+    eq fresh-var(N) =  qid("#!" + string((N / 1), 10) + ":" + "S") .
+
+    *** Length of a term list
+    op length : TermList -> Nat .
+    eq length(empty) = 0 .
+    eq length((T, TL)) = 1 + length(TL) .
+
+    *** Root symbol of a term
+    op root : Term -> Qid .
+    eq root(V) = V .
+    eq root(C) = C .
+    eq root(F[NETL]) = F .
+
+    *** Set of axioms of a given function symbol
+    op axioms : Module Qid -> AttrSet [memo] .
+    ceq axioms(MOD, F) = AS 
+    if OPDS := getOps(MOD) 
+    /\ OPDS' (op F : TL:TypeList -> TY:Type [AS] .) := OPDS .
+
+    *** Take the first K elements from a TermList
+    op take : Nat TermList -> TermList .
+    eq take(0, TL) = empty .
+    eq take(s(K), (T, TL)) = T, take(K, TL) [owise] .
+
+    *** Drop the first K elements from a TermList
+    op drop : Nat TermList -> TermList .
+    eq drop(0, TL) = TL .
+    eq drop(s(K), (T, TL)) = drop(K, TL) [owise] .
+
+    *** Auxiliary function to purge non-axiom metadata off an AttrSet
+    op only-axioms : AttrSet -> AttrSet .
+    eq only-axioms(assoc AS) = assoc only-axioms(AS) .
+    eq only-axioms(comm AS) = comm only-axioms(AS) .
+    eq only-axioms(id(T) AS) = id(T) only-axioms(AS) .
+    eq only-axioms(idem AS) = idem only-axioms(AS) .
+    eq only-axioms(AS) = none [owise] .
+
+    *** Membership in AttrSet's
+    op _in_ : Attr AttrSet -> Bool .
+    eq AT in (AT AS) = true .
+    eq AT in AS = false [owise] .
+
+    *** Auxiliary function to create terms with fresh variables as arguments
+    op build-term : Qid Nat Nat -> Term .
+    eq build-term(F, X, N) = F[ build-arg-list(X, N) ] .
+
+    *** Builds the argument list for build-term
+    op build-arg-list : Nat Nat -> NeTermList .
+    eq build-arg-list(X, 1) = fresh-var(X) .
+    eq build-arg-list(X, s(N)) = fresh-var(X), build-arg-list(s(X), N) .
+
+    *** Apply a substitution to a term (IMHO this should be part of Maude)
+    op metaApplySubstitution : Term Substitution -> Term .
+    eq metaApplySubstitution(F[NETL], SUB) = F[auxMASList(NETL, SUB)] .
+    eq metaApplySubstitution(V, (V <- T ; SUB)) = T .
+    eq metaApplySubstitution(T, SUB) = T [owise] .
+
+    op auxMASList : TermList Substitution -> TermList .
+    op auxMASList : NeTermList Substitution -> NeTermList .
+    eq auxMASList(T, SUB) = metaApplySubstitution(T, SUB) .
+    eq auxMASList((T, NETL), SUB) = auxMASList(T, SUB) , auxMASList(NETL, SUB) .
+
+    *** Term Sets
+    sort TermSet .
+    subsort Term < TermSet .
+    
+    op emptySet : -> TermSet .
+    op _;;;_ : TermSet TermSet -> TermSet [assoc comm id: emptySet] .
+    eq T1 ;;; T1 ;;; TS = T1 ;;; TS .
+
+    *** Term Bags
+    sorts NeTermBag TermBag .
+    subsort Term < NeTermBag < TermBag .
+    
+    op emptyBag : -> TermBag .
+    op _:::_ : TermBag TermBag -> TermBag [assoc comm id: emptyBag] .
+    op _:::_ : NeTermBag TermBag -> NeTermBag [ditto] .
+
+    *** Size of a TermSet
+    op size : TermSet -> Nat .
+    eq size(emptySet) = 0 .
+    eq size(T ;;; TS) = s size(TS) .
+
+    *** Size of a TermBag
+    op size : TermBag -> Nat .
+    eq size(emptyBag) = 0 .
+    eq size(T ::: TB) = s size(TB) .
+
+    *** Convert a TermList into a TermSet
+    op listToSet : TermList -> TermSet .
+    eq listToSet(empty) = emptySet .
+    eq listToSet((T, TL)) = T ;;; listToSet(TL) .
+
+    *** Convert a TermList into a TermBag
+    op listToBag : TermList -> TermBag .
+    eq listToBag(empty) = emptyBag .
+    eq listToBag((T, TL)) = T ::: listToBag(TL) .
+
+    *** Convert a TermBag into a TermList
+    op bagToList : TermBag -> TermList .
+    eq bagToList(emptyBag) = empty .
+    eq bagToList((T ::: TB)) = T, bagToList(TB) .
+
+    *** Simplify f(t) to t
+    op simplify-if-unary : Term -> Term .
+    eq simplify-if-unary(F[T]) = T .
+    eq simplify-if-unary(T) = T [owise] .
+
+    *** Decompositions and their binding pairs
+    sorts Binding Decomposition .
+    subsort Binding < Decomposition .
+
+    op empty : -> Decomposition .
+    op __ : Decomposition Decomposition -> Decomposition [assoc id: empty] .
+    op `(_|_`) : TermList TermList -> Binding .
+endfm
+
+mod A-DECOMPOSITION is
+    inc META-LEVEL-AUX .
+
+    var  T       : Term .
+    var  NETL    : NeTermList .
+    vars TL1 TL2 : TermList .
+
+    op A-decompose : TermList TermList -> [Decomposition] .
+    eq A-decompose(T, NETL) = (T | NETL) .
+    eq A-decompose(NETL, T) = (NETL | T) .
+    
+    rl A-decompose((T, TL1), (NETL, TL2)) => (T | NETL) A-decompose(TL1, TL2) .
+    rl A-decompose((NETL, TL1), (T, TL2)) => (NETL | T) A-decompose(TL1, TL2) .
+endm
+
+mod AU-DECOMPOSITION is
+    inc META-LEVEL-AUX .
+
+    var  T          : Term .
+    vars TL TL1 TL2 : TermList .
+
+    op AU-decompose : TermList TermList -> [Decomposition] .
+    eq AU-decompose(empty, empty) = empty .
+    rl AU-decompose((T, TL1), (TL, TL2)) => (T | TL) AU-decompose(TL1, TL2) .
+    rl AU-decompose((TL, TL1), (T, TL2)) => (TL | T) AU-decompose(TL1, TL2) .
+endm
+
+mod AC-DECOMPOSITION is
+    inc META-LEVEL-AUX .
+
+    var  T       : Term .
+    var  NETB    : NeTermBag .
+    vars TB1 TB2 : TermBag .
+
+    op AC-decompose : TermBag TermBag -> [Decomposition] .
+    eq AC-decompose(emptyBag, emptyBag) = empty .
+    eq AC-decompose(T, NETB) = (T | bagToList(NETB)) .
+    eq AC-decompose(NETB, T) = (bagToList(NETB) | T) .
+    rl AC-decompose((T ::: TB1), (NETB ::: TB2)) => (T | bagToList(NETB)) AC-decompose(TB1, TB2) .
+    rl AC-decompose((NETB ::: TB1), (T ::: TB2)) => (bagToList(NETB) | T) AC-decompose(TB1, TB2) .
+endm
+
+mod ACU-DECOMPOSITION is
+    inc META-LEVEL-AUX .
+
+    var  T          : Term .
+    vars TB TB1 TB2 : TermBag .
+
+    op ACU-decompose : TermBag TermBag -> [Decomposition] .
+    eq ACU-decompose(emptyBag, emptyBag) = empty .
+    rl ACU-decompose((T ::: TB1), (TB ::: TB2)) => (T | bagToList(TB)) ACU-decompose(TB1, TB2) .
+    rl ACU-decompose((TB ::: TB1), (T ::: TB2)) => (bagToList(TB) | T) ACU-decompose(TB1, TB2) .
+endm
+
+fmod META-SEARCH-ALL is
+    protecting META-LEVEL .
+
+    var N : Nat .
+    var Q : Qid .
+    var B : Bound .
+    var M : Module .
+    var RES : ResultTriple? .
+    var C : Condition .
+    vars T1 T2 : Term .
+
+    op metaSearchAll : Module Term Term Condition Qid Bound -> TermList .
+    eq metaSearchAll(M, T1, T2, C, Q, B) = auxMetaSearchAll(M, T1, T2, C, Q, B, 0) .
+
+    op auxMetaSearchAll : Module Term Term Condition Qid Bound Nat -> TermList .
+    ceq auxMetaSearchAll(M, T1, T2, C, Q, B, N) =
+    if RES == failure then empty
+    else getTerm(RES), auxMetaSearchAll(M, T1, T2, C, Q, B, s(N))
+    fi
+    if RES := metaSearch(M, T1, T2, C, Q, B, N) .
+endfm
+
+fmod LUB-SORTS is
+    pr META-LEVEL .
+
+    var  MOD : Module .
+    var  TYS : TypeSet .
+    vars TY0 TY1 TY2 TY3 : Type .
+    var  SORTS : TypeSet .
+
+    *** Computes the least upper bound of two types
+    ***
+    *** For performance reasons, we restrict the search to types in the same kind,
+    *** by using getKind and lesserSorts.
+    op  lubSorts : Module Type Type -> TypeSet .
+    eq  lubSorts(MOD, TY0, TY1) =
+    if sameKind(MOD, TY0, TY1)
+    then aux-lubSorts-filter-redundant(MOD,TY0,TY1,aux-lubSorts-filter-invalid(MOD,TY0,TY1,lesserSorts(MOD, getKind(MOD, TY0))))
+    else (none).EmptyTypeSet
+    fi .
+    
+    *** Remove types which are not general enough to include both TY0 and TY1
+    op  aux-lubSorts-filter-invalid : Module Type Type TypeSet -> TypeSet .
+    ceq aux-lubSorts-filter-invalid(MOD, TY0, TY1, (TY2 ; SORTS)) = aux-lubSorts-filter-invalid(MOD, TY0, TY1, SORTS)
+    if (not sortLeq(MOD, TY0, TY2)) or (not sortLeq(MOD, TY1, TY2)) .
+    eq  aux-lubSorts-filter-invalid(MOD, TY0, TY1, SORTS) = SORTS [owise] .
+
+    *** Remove types which are too general
+    op  aux-lubSorts-filter-redundant : Module Type Type TypeSet -> TypeSet .
+    ceq aux-lubSorts-filter-redundant(MOD, TY0, TY1, (TY2 ; TY3 ; SORTS)) = aux-lubSorts-filter-redundant(MOD, TY0, TY1, (TY2 ; SORTS))
+    if sortLeq(MOD, TY2, TY3) .
+    eq  aux-lubSorts-filter-redundant(MOD, TY0, TY1, SORTS) = SORTS [owise] .
+endfm
+
+fmod META-LEVEL-AUX-2 is
+    inc META-LEVEL-AUX + LUB-SORTS .
+
+    var N : Nat .
+    var TY : Type .
+    var TYS : TypeSet .
+
+    *** Borrowed from Full Maude
+    *** Auxiliar function to construct a (fresh) variable from a natural number
+    op newVar : Nat TypeList -> TermSet .
+    eq newVar(N, none) = emptySet .
+    eq newVar(N, TY ; TYS) = (newVar*(N, TY) ;;; newVar(s(N), TYS)) .
+
+    op newVar* : Nat Type -> Variable .
+    eq newVar*(N, TY) = qid("#!" + string(N, 10) + ":" + string(TY)) .
+endfm
+
+fmod LGG-NORMALIZATION is
+    pr META-LEVEL-AUX-2 .
+
+    var N : Nat .
+    var F : Qid .
+    var V : Variable .
+    var SUB : Substitution .
+    var T T' : Term .
+    vars TL TL1 TL2 TL3 : TermList .
+    var MOD : Module .
+
+    *** Normalize a lgg representation
+    op lgg-normalize : Module Term -> Term .
+    ceq lgg-normalize(MOD, T) = getTerm(metaNormalize(MOD, metaApplySubstitution(T, SUB)))
+    if SUB := gen-renaming(nub(sort-by-frequency(preorder-vars(T))), 0) .
+
+    *** Returns the list of variable occurences in preorder
+    op preorder-vars : Term -> TermList .
+    eq preorder-vars(V) = V .
+    eq preorder-vars(F[TL]) = preorder-vars-tl(TL) .
+    eq preorder-vars(T) = empty [owise] .
+
+    *** Map of preorder-vars over a list
+    op preorder-vars-tl : TermList -> TermList .
+    eq preorder-vars-tl(empty) = empty .
+    eq preorder-vars-tl((T, TL)) = preorder-vars(T), preorder-vars-tl(TL) .
+
+    *** Remove repeated elements in a TermList (keeps first occurences)
+    op nub : TermList -> TermList .
+    eq nub((TL1, T, TL2, T, TL3)) = nub((TL1, T, TL2, TL3)) .
+    eq nub(TL) = TL [owise] .
+
+    *** Generates a renaming for a list of variables, so that they appear in
+    *** increasing order during a preorder exploration of the term structure.
+    op gen-renaming : TermList Nat -> Substitution .
+    eq gen-renaming(empty, N) = none .
+    eq gen-renaming((T, TL), N) = T <- newVar(N, getType(T)) ; gen-renaming(TL, s(N)) .
+
+    *** Sort items according to (absolute) frequency
+    op sort-by-frequency : TermList -> TermList .
+    ceq sort-by-frequency(TL) = (TL1, T', TL2, T, TL3) 
+    if (TL1, T, TL2, T', TL3) := TL 
+    /\ occurrences(T', TL) > occurrences(T, TL) .
+    eq sort-by-frequency(TL) = TL [owise] .
+
+    *** Count the number of occurrences of a Term in a TermList
+    op occurrences : Term TermList -> Nat .
+    eq occurrences(T, empty) = 0 .
+    eq occurrences(T, (T,TL)) = s( occurrences(T, TL) ) .
+    eq occurrences(T, (T',TL)) = occurrences(T, TL) .
+endfm
+
+mod ACU-LGG-SYNTAX is
+    inc META-LEVEL-AUX-2 + LGG-NORMALIZATION + META-SEARCH-ALL .
+
+    var F FID G GID : Qid .
+    var AS : AttrSet .
+    var C : Constant .
+    var V : Variable .
+    vars N N' L : Nat .
+    var MOD : Module .
+    var TS TS' : TermSet .
+    vars T T1 T2 : Term .
+    var MA : MultiAssignment .
+    var SUB : Substitution .
+    vars MSUB MSUB' : MultiSubstitution .
+    var SORT : Sort .
+    var SORTS : SortSet .
+    var NETL : NeTermList .
+    var TY TY1 TY2 : Type .
+    var TYS : TypeSet .
+    var TL : TermList .
+    vars T1-leq-T2 T2-leq-T1 : Bool .
+
+    *** Constructor that defines an unresolved conflict pair
+    op conflict : Term Term -> Variable [ctor] .
+
+    *** Builder for lggs
+    op acu-lgg : Module Term Term -> [Term] .
+
+    *** Compute the lggs
+    op metaGeneralize : Module Term Term -> TermSet .
+    eq metaGeneralize(MOD,T1,T2) = lggs(MOD,T1,T2) .
+
+    *** Compute all the lgg candidates
+    op acu-lgg-all-candidates : Module Term Term -> TermSet .
+    eq acu-lgg-all-candidates(MOD, T1, T2) = downTermList(acu-lgg-find-meta(MOD, T1, T2)) .
+
+    op acu-lgg-find-meta : Module Term Term -> TermList .
+    eq acu-lgg-find-meta(MOD, T1, T2) = metaSearchAll(upModule('ACUOS, true),upTerm(acu-lgg-candidate-not-normal(MOD, T1, T2)),'FS:Term,nil,'!,unbounded) .
+
+    op downTermList : TermList -> TermSet .
+    eq downTermList(empty) = emptySet .
+    eq downTermList((T, TL)) = downTerm(T, emptySet) ;;; downTermList(TL) .
+
+    *** Get the lgg set
+    op lggs : Module Term Term -> TermList .
+    eq lggs(MOD, T1, T2) = lgg-filter(MOD, acu-lgg-all-candidates(MOD, T1, T2)) .
+
+    *** Filter redundant generalizations (optimized for shorter terms)
+    ***
+    *** 4 cases are considered: T1 || T2, T1 < T2, T2 < T1, T1 == T2
+    op lgg-filter : Module TermSet -> TermSet .
+    ceq lgg-filter(MOD, (T1 ;;; T2 ;;; TS)) = lgg-filter(MOD, shorter-term(T1, T2) ;;; TS)
+    if metaMatch(MOD, T1, T2, nil, 0) =/= noMatch 
+    /\ metaMatch(MOD, T2, T1, nil, 0) =/= noMatch .
+    ceq lgg-filter(MOD, (T1 ;;; T2 ;;; TS)) = lgg-filter(MOD, T2 ;;; TS)
+    if metaMatch(MOD, T1, T2, nil, 0) =/= noMatch 
+    /\ metaMatch(MOD, T2, T1, nil, 0) == noMatch .
+    ceq lgg-filter(MOD, (T1 ;;; T2 ;;; TS)) = lgg-filter(MOD, T1 ;;; TS)
+    if metaMatch(MOD, T1, T2, nil, 0) == noMatch 
+    /\ metaMatch(MOD, T2, T1, nil, 0) =/= noMatch .
+    eq lgg-filter(MOD, TS) = TS [owise] .
+
+    *** Return the shorter term (TODO)
+    op shorter-term : Term Term -> Term .
+    eq shorter-term(T1, T2) = if term-size(T1) <= term-size(T2) then T1 else T2 fi .
+
+    *** Size of a term
+    op term-size : Term -> Nat .
+    eq term-size(C) = 1 .
+    eq term-size(V) = 1 .
+    eq term-size(F[TL]) = 1 + termlist-size(TL) .
+
+    *** Size of a TermList
+    op termlist-size : TermList -> Nat .
+    eq termlist-size(empty) = 0 .
+    eq termlist-size((T, TL)) = term-size(T) + termlist-size(TL) .
+
+    *** Compute an lgg candidate
+    op acu-lgg-candidate : Module Term Term -> Term .
+    eq acu-lgg-candidate(MOD, T1, T2) = lgg-normalize(MOD,acu-lgg-resolve(MOD,acu-lgg(MOD, T1, T2))) .
+
+    op acu-lgg-candidate-not-normal : Module Term Term -> [Term] .
+    eq acu-lgg-candidate-not-normal(MOD, T1, T2) = acu-lgg-resolve(MOD,acu-lgg(MOD, T1, T2)) .
+
+    *** Post-process: introduce sort information
+    op acu-lgg-resolve : Module Term -> Term .
+    ceq acu-lgg-resolve(MOD, T) = metaApplySubstitution(T, toSubstitution(MSUB))
+    if MN(MSUB, N) := acu-lgg-build-msub(MOD, T, none, 0) .
+
+    sort MSubNat .
+    op MN : MultiSubstitution Nat -> MSubNat [ctor] .
+
+    *** Build possible substitutions for the conflict pairs
+    *** This operator is inherently non-deterministic, because it has to account
+    *** the different possible sorts that the variables may acquire.
+    op  acu-lgg-build-msub : Module Term MultiSubstitution Nat -> MSubNat .
+    ceq  acu-lgg-build-msub(MOD, conflict(T1,T2), MSUB, N) = MN(MSUB, N)
+    if conflict(T1,T2) in MSUB .
+    ceq  acu-lgg-build-msub(MOD, conflict(T1,T2), MSUB, N) = MN(MSUB ; MSUB', N')
+    if not conflict(T1,T2) in MSUB 
+    /\ MN(MSUB', N') := resolve-conflict-pair(MOD,T1,T2,N) .
+    ceq acu-lgg-build-msub(MOD, F[T,NETL], MSUB, N) = acu-lgg-build-msub(MOD, F[NETL], MSUB', N')
+    if MN(MSUB', N') := acu-lgg-build-msub(MOD, T, MSUB, N) .
+    eq  acu-lgg-build-msub(MOD, F[T], MSUB, N) = acu-lgg-build-msub(MOD, T, MSUB, N) .
+    eq  acu-lgg-build-msub(MOD, T, MSUB, N) = MN(MSUB, N) [owise] .
+
+    op  resolve-conflict-pair : Module Term Term Nat -> MSubNat .
+    ceq resolve-conflict-pair(MOD, T1, T2, N) = MN(V <- {TS}, N + L) 
+    if TY1 := leastSort(MOD, T1) 
+    /\ TY2 := leastSort(MOD, T2) 
+    /\ TYS := lubSorts(MOD, TY1, TY2) 
+    /\ V   := conflict(T1,T2) 
+    /\ TS  := newVar(N, TYS) 
+    /\ L   := size(TS) .
+    
+    op _in_ : Variable MultiSubstitution -> Bool .
+    eq V in (MSUB ; V <- {TS}) = true .
+    eq V in MSUB = false [owise] .
+
+    *** A MultiSubstitution is a non-deterministic substitution.
+    *** A set of possible substitution terms is given for each variable,
+    *** any of which could be selected by the substitution process.
+    sorts MultiAssignment MultiSubstitution .
+    subsort MultiAssignment < MultiSubstitution .
+    op none   : -> MultiSubstitution [ctor] .
+    op _<-`{_`} : Variable TermSet -> MultiAssignment [ctor] .
+    op _;_    : MultiSubstitution MultiSubstitution -> MultiSubstitution [ctor assoc comm id: none] .
+
+    op toSubstitution : MultiSubstitution -> [Substitution] .
+    eq toSubstitution(none) = none .
+    eq toSubstitution(MA ; MSUB) = toSubstitution*(MA) ; toSubstitution(MSUB) .
+
+    op toSubstitution* : MultiAssignment -> [Assignment] .
+    eq toSubstitution*(V <- {T ;;; TS}) = V <- T .
+
+    op  has-identity : Module Qid -> Bool .
+    ceq has-identity(MOD, F) = true if (id(FID) AS) := axioms(MOD, F) .
+    eq  has-identity(MOD, F) = false [owise] .
+
+    *** Expand U axiom or turn term into conflict
+    op expand-R : Module Term Term -> Term .
+    ceq expand-R(MOD, T, F[TL]) = acu-lgg(MOD, F[T], F[TL])
+    if (id(FID) AS) := axioms(MOD, F) 
+    /\ G := root(T) 
+    /\ F =/= G .
+    ceq expand-R(MOD, T1, T2) = acu-lgg(MOD, T1, T2)
+    if root(T1) == root(T2) .
+    eq expand-R(MOD, T1, T2) = conflict(T1, T2) [owise] .
+
+    op expand-L : Module Term Term -> Term .
+    ceq expand-L(MOD, F[TL], T) = acu-lgg(MOD, F[TL], F[T])
+    if (id(FID) AS) := axioms(MOD, F) 
+    /\ G := root(T) 
+    /\ F =/= G .
+    ceq expand-L(MOD, T1, T2) = acu-lgg(MOD, T1, T2)
+    if root(T1) == root(T2) .
+    eq expand-L(MOD, T1, T2) = conflict(T1, T2) [owise] .
+endm
+
+*** Rules for ordinary, syntactic ACU lgg
+mod ACU-LGG-EMPTY is
+    inc ACU-LGG-SYNTAX .
+
+    var F G FID GID : Qid .
+    var AS : AttrSet .
+    var MOD : Module .
+    var C : Constant .
+    vars T1 T2 : Term .
+    vars V1 V2 : Variable .
+    var NETL1 NETL2 : NeTermList .
+
+    ceq [clash] : acu-lgg(MOD, T1, T2) = conflict(T1, T2)
+    if F := root(T1) 
+    /\ G := root(T2) 
+    /\ F =/= G 
+    /\ not has-identity(MOD, F) 
+    /\ not has-identity(MOD, G) .
+    ---eq [decompose-variable] : acu-lgg(MOD, V1, V2) = if (V1 == V2) then V1 else conflict(V1,V2) fi .
+    eq [decompose-constant] : acu-lgg(MOD, C, C) = C .
+    crl [decompose-free] : acu-lgg(MOD, F[NETL1], F[NETL2]) => F[decompose-args(MOD, NETL1, NETL2)]
+    if not assoc in axioms(MOD, F) 
+    /\ not comm in axioms(MOD, F) .
+    
+    *** Auxiliary function that decomposes arguments from
+    op decompose-args : Module NeTermList NeTermList -> NeTermList .
+    eq decompose-args(MOD, (T1,NETL1), (T2,NETL2)) = acu-lgg(MOD, T1, T2), decompose-args(MOD, NETL1, NETL2) .
+    eq decompose-args(MOD, T1, T2) = acu-lgg(MOD, T1, T2) [owise] .
+endm
+
+mod ACU-LGG-C is
+    inc ACU-LGG-SYNTAX .
+
+    var F : Qid .
+    var MOD : Module .
+    vars T1 T1' T2 T2' : Term .
+
+    crl [decompose-C-1] : acu-lgg(MOD, F[T1, T1'], F[T2,T2']) => F[acu-lgg(MOD,T1,T2), acu-lgg(MOD,T1',T2')]
+    if comm in axioms(MOD, F) 
+    /\ not assoc in axioms(MOD, F) .
+    crl [decompose-C-2] : acu-lgg(MOD, F[T1, T1'], F[T2,T2']) => F[acu-lgg(MOD,T1,T2'), acu-lgg(MOD,T1',T2)]
+    if comm in axioms(MOD, F) 
+    /\ not assoc in axioms(MOD, F) .
+endm
+
+mod ACU-LGG-A is
+    inc ACU-LGG-SYNTAX + A-DECOMPOSITION .
+
+    var F : Qid .
+    var MOD : Module .
+    var T : Term .
+    vars NETL NETL1 NETL2 : NeTermList .
+    var D : Decomposition .
+
+    crl [decompose-A-1] : acu-lgg(MOD, F[NETL1], F[NETL2]) => F[decompose-args-A(MOD, F, D)]
+    if assoc in axioms(MOD, F) 
+    /\ not comm in axioms(MOD, F) 
+    /\ not has-identity(MOD, F) 
+    /\ A-decompose(NETL1, NETL2) => D:Decomposition .
+
+    op decompose-args-A : Module Qid Decomposition -> NeTermList .
+    eq decompose-args-A(MOD, F, empty) = empty .
+    eq decompose-args-A(MOD, F, ((T | NETL) D)) = acu-lgg(MOD, T, simplify-if-unary(F[NETL])), decompose-args-A(MOD, F, D) .
+    eq decompose-args-A(MOD, F, ((NETL | T) D)) = acu-lgg(MOD, simplify-if-unary(F[NETL]), T), decompose-args-A(MOD, F, D) .
+endm
+
+mod ACU-LGG-AU is
+    inc ACU-LGG-SYNTAX + AU-DECOMPOSITION .
+
+    vars F FID : Qid .
+    var AS : AttrSet .
+    var MOD : Module .
+    var T : Term .
+    vars NETL NETL1 NETL2 : NeTermList .
+    var D : Decomposition .
+
+    crl [decompose-AU] : acu-lgg(MOD, F[NETL1], F[NETL2]) => F[decompose-args-AU(MOD, F, FID, D)]
+    if assoc in axioms(MOD, F) 
+    /\ not comm in axioms(MOD, F) 
+    /\ (id(FID) AS) := axioms(MOD, F) 
+    /\ AU-decompose(NETL1, NETL2) => D:Decomposition .
+    
+    op decompose-args-AU : Module Qid Qid Decomposition -> NeTermList .
+    eq decompose-args-AU(MOD, F, FID, empty) = empty .
+    eq decompose-args-AU(MOD, F, FID, ((T | NETL) D)) = expand-L(MOD, T, simplify-if-unary(F[NETL])), decompose-args-AU(MOD, F, FID, D) .
+    eq decompose-args-AU(MOD, F, FID, ((T | empty) D)) = expand-L(MOD, T, FID), decompose-args-AU(MOD, F, FID, D) .
+    eq decompose-args-AU(MOD, F, FID, ((NETL | T) D)) = expand-R(MOD, simplify-if-unary(F[NETL]), T), decompose-args-AU(MOD, F, FID, D) .
+    eq decompose-args-AU(MOD, F, FID, ((empty | T) D)) = expand-R(MOD, FID, T), decompose-args-AU(MOD, F, FID, D) .
+endm
+
+mod ACU-LGG-AC is
+    inc ACU-LGG-SYNTAX + AC-DECOMPOSITION .
+
+    var F : Qid .
+    var MOD : Module .
+    vars T T1 T2 : Term .
+    vars NETL1 NETL2 NETL' : NeTermList .
+    var TB TB1 TB2 : TermBag .
+    var TL : TermList .
+    var AC : Decomposition .
+
+    crl [decompose-AC-1] : acu-lgg(MOD, F[NETL1], F[NETL2]) => F[NETL']
+    if assoc in axioms(MOD, F) 
+    /\ comm in axioms(MOD, F) 
+    /\ not has-identity(MOD, F) 
+    /\ TB1 := listToBag(NETL1) 
+    /\ TB2 := listToBag(NETL2) 
+    /\ AC-decompose(TB1, TB2) => AC 
+    /\ decompose-args-AC(MOD, F, AC) => NETL' .
+
+    op decompose-args-AC : Module Qid Decomposition -> NeTermList .
+    eq decompose-args-AC(MOD, F, empty) = empty .
+    eq decompose-args-AC(MOD, F, ((T | TL) AC)) = acu-lgg(MOD, T, simplify-if-unary(F[TL])), decompose-args-AC(MOD, F, AC) .
+    eq decompose-args-AC(MOD, F, ((TL | T) AC)) = acu-lgg(MOD, simplify-if-unary(F[TL]), T), decompose-args-AC(MOD, F, AC) .
+endm
+
+mod ACU-LGG-ACU is
+    inc ACU-LGG-SYNTAX + ACU-DECOMPOSITION .
+    
+    vars F FID : Qid .
+    var MOD : Module .
+    vars T T1 T2 : Term .
+    vars NETL1 NETL2 NETL : NeTermList .
+    var TB TB1 TB2 : TermBag .
+    var TL : TermList .
+    var AC : Decomposition .
+    var AS : AttrSet .
+
+    crl [decompose-AC-1] : acu-lgg(MOD, F[NETL1], F[NETL2]) => F[decompose-args-ACU(MOD, F, FID, AC)]
+    if assoc in axioms(MOD, F) 
+    /\ comm in axioms(MOD, F) 
+    /\ (id(FID) AS) := axioms(MOD, F) 
+    /\ TB1 := listToBag(NETL1) 
+    /\ TB2 := listToBag(NETL2) 
+    /\ ACU-decompose(TB1, TB2) => AC .
+    
+    op decompose-args-ACU : Module Qid Qid Decomposition -> NeTermList .
+    eq decompose-args-ACU(MOD, F, FID, empty) = empty .
+    eq decompose-args-ACU(MOD, F, FID, ((T | NETL) AC)) = expand-L(MOD, T, simplify-if-unary(F[NETL])), decompose-args-ACU(MOD, F, FID, AC) .
+    eq decompose-args-ACU(MOD, F, FID, ((T | empty) AC)) = expand-L(MOD, T, FID), decompose-args-ACU(MOD, F, FID, AC) .
+    eq decompose-args-ACU(MOD, F, FID, ((NETL | T) AC)) = expand-R(MOD, simplify-if-unary(F[NETL]), T), decompose-args-ACU(MOD, F, FID, AC) .
+    eq decompose-args-ACU(MOD, F, FID, ((empty | T) AC)) = expand-R(MOD, FID, T), decompose-args-ACU(MOD, F, FID, AC) .
+endm
+
+mod ACU-LGG-EXPAND-U is
+    inc ACU-LGG-SYNTAX .
+
+    vars F FID G : Qid .
+    var MOD : Module .
+    var AS : AttrSet .
+    var T : TermList .
+    var NETL : NeTermList .
+    
+    crl [Expand-U-L-1] : acu-lgg(MOD, F[NETL], T) => acu-lgg(MOD, F[NETL], F[T, FID])
+    if (id(FID) AS) := axioms(MOD, F) 
+    /\ G := root(T) 
+    /\ F =/= G .
+    
+    crl [Expand-U-L-2] : acu-lgg(MOD, F[NETL], T) => acu-lgg(MOD, F[NETL], F[FID, T])
+    if (id(FID) AS) := axioms(MOD, F) 
+    /\ G := root(T) 
+    /\ F =/= G 
+    /\ not comm in axioms(MOD, F) .
+    
+    crl [Expand-U-R-1] : acu-lgg(MOD, T, F[NETL]) => acu-lgg(MOD, F[T, FID], F[NETL])
+    if (id(FID) AS) := axioms(MOD, F) 
+    /\ G := root(T) 
+    /\ F =/= G .
+    
+    crl [Expand-U-R-2] : acu-lgg(MOD, T, F[NETL]) => acu-lgg(MOD, F[T, FID], F[NETL])
+    if (id(FID) AS) := axioms(MOD, F) 
+    /\ G := root(T) 
+    /\ F =/= G 
+    /\ not comm in axioms(MOD, F) .
+endm
+
+mod ACUOS is
+    inc ACU-LGG-EMPTY + ACU-LGG-C + ACU-LGG-A + ACU-LGG-AU + ACU-LGG-AC + ACU-LGG-ACU + ACU-LGG-EXPAND-U .
+endm

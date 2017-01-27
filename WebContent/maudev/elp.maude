@@ -1,0 +1,2814 @@
+***(
+Copyright 2014 Extensions of Logic Programming - Universitat Politècnica de València
+ 
+Permission is hereby granted, free of charge, to any person obtaining a copy of 
+this software and associated documentation files (the "Software"), to deal in 
+the Software without restriction, including without limitation the rights to use, 
+copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the 
+Software, and to permit persons to whom the Software is furnished to do so, 
+subject to the following conditions:
+ 
+The above copyright notice and this permission notice shall be included in all 
+copies or substantial portions of the Software.
+ 
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, 
+INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A 
+PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT 
+HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION 
+OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE 
+SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+)*** 
+
+--------------------------------------------------------------------------------
+---                                                     To be run on Mau-Dev 2.7
+---                                                safe-tools.dsic.upv.es/maudev
+---                                                         Author: Julia Sapiña
+--------------------------------------------------------------------------------
+
+mod ELP-SORTS is
+    pr META-LEVEL .
+    pr CONVERSION .
+    pr CONFIGURATION .
+
+    sort Bullet .
+    subsort Bullet < Variable .
+
+    sort Position TermListPos TermListPosList .
+    subsort Nat < Position .
+    subsort TermListPos < TermListPosList .
+
+    sorts SubList SubPair SubNat SubCondNat mguPair .
+    subsort Substitution < SubList .
+
+    sorts TermListNat TermSubNat TermSubCondNat .
+
+    sorts NodeTerm NodeTermList QueryResult .
+    subsort NodeTerm < NodeTermList .
+
+    sort dwPair .
+
+    sorts TreeNode TreeNodeList Tree .
+    subsort TreeNode < TreeNodeList .
+
+    sorts InsTraceStep InsTrace .
+    subsort InsTraceStep < InsTrace .
+
+    sorts ExpandResult .
+
+    sorts OutputTriple SlicingConf ModuleSlicingConfNat .
+
+    sorts TraceSliceStep TraceSlice .
+    subsort TraceSliceStep < TraceSlice .
+
+    sort QidType .
+
+    sorts sAssertion fAssertion Assertion AssertionList .
+    sorts Assertions SatTerm SatResult FixedResult .
+    subsort sAssertion fAssertion < Assertion < AssertionList .
+    
+    sort Rule? .
+    subsort Rule < Rule? .
+endm
+
+view Position from TRIV to ELP-SORTS is
+  sort Elt to Position .
+endv
+
+view QidType from TRIV to ELP-SORTS is
+  sort Elt to QidType .
+endv
+
+mod ELP-OPS is
+    pr ELP-SORTS .
+    pr SET{Position} .
+    pr SET{QidType} .
+
+    vars T T' T* PAT PAT' FORM FORM' T1 T2 T3 T4 LAMBDA LAMBDA' RHO RHO' : Term .
+    var TL : TermList .
+    vars STR STR' : String .
+    var ATS : AttrSet .
+    var TS* : TraceSlice .
+    var IT : InsTrace .
+    var E : Equation .
+    var R : Rule .
+    vars COND B* : Condition .
+    vars SB SB' SB'' : Substitution .
+    vars P P' P'' : Position .
+    var ASR : Assertion .
+    vars N NC ID PID SOL ATOM : Nat .
+    var F : Qid .
+    vars ASRL ASRL' : AssertionList .
+    var CO : Context .
+    
+    ops noFix notSupported : -> Rule? [ctor] .
+    
+    op noPos : -> Position .
+    op Lambda : -> Position .
+    op _._ : Position Position -> Position [assoc id: noPos] .
+
+    op nil : -> TermListPosList .
+    op `[_:_`] : Term Position -> TermListPos .
+    op __ : TermListPosList TermListPosList -> TermListPosList [assoc id: nil] .
+
+    op nil : -> mguPair .
+    op `[_|_`] : TermList TermList -> mguPair .
+    op __ : mguPair mguPair -> mguPair [ctor assoc comm id: nil] .
+    
+    op none : -> SubPair .
+    op `[_|_`] : Substitution Substitution -> SubPair .
+    op getFirst : SubPair -> Substitution .
+    eq getFirst(none) = none .
+    eq getFirst([ SB | SB' ]) = SB .
+    op getLast : SubPair -> Substitution .
+    eq getLast(none) = none .
+    eq getLast([ SB | SB' ]) = SB' .
+    
+    op EmptySubList : -> SubList .
+    op _`,_ : SubList SubList -> SubList [assoc id: EmptySubList] .
+
+    op `[_|_`] : Substitution Nat -> SubNat [ctor] .
+    op getSub : SubNat -> Substitution .
+    eq getSub([ SB | NC ]) = SB .
+    op getNC : SubNat -> Nat .
+    eq getNC([ SB | NC ]) = NC .
+
+    op `[_|_|_`] : Substitution Condition Nat -> SubCondNat [ctor] .
+    op getSub : SubCondNat -> Substitution .
+    eq getSub([ SB | COND | NC ]) = SB .
+    op getCond : SubCondNat -> Condition .
+    eq getCond([ SB | COND | NC ]) = COND .
+    op getNC : SubCondNat -> Nat .
+    eq getNC([ SB | COND | NC ]) = NC .
+
+    op `[_|_`] : TermList Nat -> TermListNat [ctor] .
+    op getTerm : TermListNat -> TermList .
+    eq getTerm([TL | NC]) = TL .
+    op getNC : TermListNat -> Nat .
+    eq getNC([TL | NC]) = NC .
+
+    op `[_|_|_`] : TermList Substitution Nat -> TermSubNat [ctor] .
+    op getTerm : TermSubNat -> TermList .
+    eq getTerm([ TL | SB | NC ]) = TL .
+    op getSub : TermSubNat -> Substitution .
+    eq getSub([ TL | SB | NC ]) = SB .
+    op getNC : TermSubNat -> Nat .
+    eq getNC([ TL | SB | NC ]) = NC .
+
+    op `[_|_|_|_`] : TermList Substitution Condition Nat -> TermSubCondNat [ctor] .
+    op getTerm : TermSubCondNat -> TermList .
+    eq getTerm([ TL | SB | COND | NC ]) = TL .
+    op getSub : TermSubCondNat -> Substitution .
+    eq getSub([ TL | SB | COND | NC ]) = SB .
+    op getCond : TermSubCondNat -> Condition .
+    eq getCond([ TL | SB | COND | NC ]) = COND .
+    op getNC : TermSubCondNat -> Nat .
+    eq getNC([ TL | SB | COND | NC ]) = NC .
+
+    op nil : -> NodeTerm .
+    op nil : -> QueryResult .
+    op noF : -> Qid .
+    op _::_ : Nat Set{Position} -> QueryResult .
+    op `{_`,_`} : Nat TermList -> NodeTerm .
+    op __ : NodeTermList NodeTermList -> NodeTermList [assoc id: nil] .
+    op __ : QueryResult QueryResult -> QueryResult [ctor assoc comm id: nil] .
+
+    op `[_;_`] : String String -> dwPair [ctor] .
+    op getTerm : dwPair -> String .
+    eq getTerm([ STR ; STR' ]) = STR .
+    op getMap : dwPair -> String .
+    eq getMap([ STR ; STR' ]) = STR' .
+
+    op nil : -> TreeNodeList .
+    op __ : TreeNodeList TreeNodeList -> TreeNodeList [ctor assoc id: nil] .
+    op `{_`,_`,_`,_`} : Nat Nat Qid Nat -> TreeNode .
+    op `{_`,_`,_`,_`,_`} : Nat Nat Qid Nat Term -> TreeNode . --- ID, PID, Rule, Solution, Term
+    op getID : TreeNode -> Nat .
+    eq getID({ ID,PID,F,SOL }) = ID .
+    eq getID({ ID,PID,F,SOL,T }) = ID .
+    op getPID : TreeNode -> Nat .
+    eq getPID({ ID,PID,F,SOL }) = PID .
+    eq getPID({ ID,PID,F,SOL,T }) = PID .
+    op getRule : TreeNode -> Qid .
+    eq getRule({ ID,PID,F,SOL }) = F .
+    eq getRule({ ID,PID,F,SOL,T }) = F .
+    op getSolution : TreeNode -> Nat .
+    eq getSolution({ ID,PID,F,SOL }) = SOL .
+    eq getSolution({ ID,PID,F,SOL,T }) = SOL .
+    op getTerm : TreeNode -> Term .
+    eq getTerm({ ID,PID,F,SOL,T }) = T .
+
+    op tree : TreeNodeList TreeNodeList Nat Nat Nat -> Tree [ctor] . --- NodeList, Bound, Depth, newID
+    op nil : -> InsTrace [ctor] .
+    op __ : InsTrace InsTrace -> InsTrace [ctor assoc id: nil format (d n d)] .
+
+    op _->^`{_`,_`,_`}_ : Term Rule Substitution Position Term -> InsTraceStep [ctor] .
+    op _->^`{_`,_`,_`}_ : Term Equation Substitution Position Term -> InsTraceStep [ctor] .
+
+    op getLength : InsTrace -> Nat .
+    eq getLength(nil) = 0 .
+    eq getLength((T1 ->^{E,SB,P} T2) IT) = 1 + getLength(IT) .
+    eq getLength((T1 ->^{R,SB,P} T2) IT) = 1 + getLength(IT) .
+
+    op getLastRule : InsTrace -> Rule .
+    eq getLastRule(IT (T1 ->^{E,SB,P} T2)) = getLastRule(IT) .
+    eq getLastRule(IT (T1 ->^{R,SB,P} T2)) = R .
+    eq getLastRule(IT) = none [owise] .
+
+    op getLastRewStep : InsTrace -> InsTraceStep .
+    eq getLastRewStep(IT (T1 ->^{E,SB,P} T2)) = getLastRewStep(IT) .
+    eq getLastRewStep(IT (T1 ->^{R,SB,P} T2)) = (T1 ->^{R,SB,P} T2) .
+
+    op getLastRewStep+ : InsTrace -> InsTrace .
+    eq getLastRewStep+(IT (T1 ->^{E,SB,P} T2)) = getLastRewStep+(IT) (T1 ->^{E,SB,P} T2) .
+    eq getLastRewStep+(IT (T1 ->^{R,SB,P} T2)) = (T1 ->^{R,SB,P} T2) .
+
+    op getSub : InsTraceStep -> Substitution .
+    eq getSub((T1 ->^{E,SB,P} T2)) = SB .
+    eq getSub((T1 ->^{R,SB,P} T2)) = SB .
+    
+    op getFirstTerm : InsTrace -> Term .
+    eq getFirstTerm((nil).InsTrace) = empty .
+    eq getFirstTerm((T1 ->^{E,SB,P} T2) IT) = T1 .
+    eq getFirstTerm((T1 ->^{R,SB,P} T2) IT) = T1 .
+
+    op getSecondTerm : InsTrace -> Term .
+    eq getSecondTerm((nil).InsTrace) = empty .
+    eq getSecondTerm((T1 ->^{E,SB,P} T2) IT) = T2 .
+    eq getSecondTerm((T1 ->^{R,SB,P} T2) IT) = T2 .
+
+    op getLeftTerm : InsTrace -> Term .
+    eq getLeftTerm((T1 ->^{(eq LAMBDA = RHO [ATS label('unflattening)] .),SB',P'} T2) (T2 ->^{R,SB,P} T3) IT) = T2 .
+    eq getLeftTerm((T1 ->^{(eq LAMBDA = RHO [ATS label('flattening)] .),SB'',P''} T2) (T2 ->^{(eq LAMBDA' = RHO' [ATS label('unflattening)] .),SB',P'} T3) (T3 ->^{R,SB,P} T4) IT) = T3 .
+    eq getLeftTerm((T1 ->^{R,SB,P} T2) IT) = T1 .
+
+    op getRightTerm : InsTrace -> Term .
+    eq getRightTerm((T1 ->^{(eq LAMBDA = RHO [ATS label('unflattening)] .),SB',P'} T2) (T2 ->^{R,SB,P} T3) IT) = T3 .
+    eq getRightTerm((T1 ->^{R,SB,P} T2) IT) = T2 .
+
+    op getLastTerm : InsTrace -> Term .
+    eq getLastTerm((nil).InsTrace) = empty .
+    eq getLastTerm(IT (T1 ->^{E,SB,P} T2)) = T2 .
+    eq getLastTerm(IT (T1 ->^{R,SB,P} T2)) = T2 .
+
+    op getPos : InsTrace -> Position .
+    eq getPos((T1 ->^{(eq LAMBDA = RHO [ATS label('unflattening)] .),SB',P'} T2) (T2 ->^{R,SB,P} T3) IT) = P .
+    eq getPos((T1 ->^{(eq LAMBDA = RHO [ATS label('flattening)] .),SB'',P''} T2) (T2 ->^{(eq LAMBDA' = RHO' [ATS label('unflattening)] .),SB',P'} T3) (T3 ->^{R,SB,P} T4) IT) = P .
+    eq getPos((T1 ->^{R,SB,P} T2) IT) = P .
+
+    op nil : -> ExpandResult .
+    op __ : ExpandResult ExpandResult -> ExpandResult [assoc id: nil] .
+    op `{_`} : InsTrace -> ExpandResult [ctor] .
+
+    op nil : -> TraceSlice .
+    op `{_`,_`,_`} : Term Type Equation -> TraceStep .
+    op _->`{_`,_`}_ : Term Qid Substitution Term -> TraceSliceStep .
+    op __ : TraceSlice TraceSlice -> TraceSlice [assoc id: nil format (n n n)] .
+
+    op fwd<_`,_`,_`,_> : InsTrace TraceSlice Term Condition -> SlicingConf .
+    op bck<_`,_`,_`,_> : InsTrace TraceSlice Term Condition -> SlicingConf .
+
+    op _`,_`,_ : TraceSlice Condition Nat -> OutputTriple .
+    op getTrace : OutputTriple -> TraceSlice .
+    eq getTrace(TS*,B*,NC) = TS* .
+    op getCond : OutputTriple -> Condition .
+    eq getCond(TS*,B*,NC) = B* .
+    op getNC : OutputTriple -> Nat .
+    eq getNC(TS*,B*,NC) = NC .
+    op getSub : UnificationPair -> Substitution .
+    eq getSub({SB,NC}) = SB .
+    op getNC : UnificationPair -> Nat .
+    eq getNC({SB,NC}) = NC .
+
+    op getFirstTerm : TraceSlice -> TermList .
+    eq getFirstTerm((nil).TraceSlice) = empty .
+    eq getFirstTerm((T1 ->{F,SB} T2) TS*) = T1 .        
+    op getSecondTerm : TraceSlice -> Term .
+    eq getSecondTerm((nil).InsTrace) = empty .
+    eq getSecondTerm((T1 ->{F,SB} T2) TS*) = T2 .        
+    op getLastTerm : TraceSlice -> TermList .
+    eq getLastTerm((nil).TraceSlice) = empty .
+    eq getLastTerm(TS* (T1 ->{F,SB} T2)) = T2 .
+    op getLeftTerm : TraceSlice -> TermList .
+    eq getLeftTerm((T1 ->{'unflattening,SB} T2) (T2 ->{F,SB'} T3) TS*) = T2 .
+    eq getLeftTerm((T1 ->{F,SB}(T2)) TS*) = T1 [owise] .
+
+    op nil : -> QidType .
+    op _##_ : Qid Type -> QidType .
+
+    op nil : -> AssertionList .
+    op __ : AssertionList AssertionList -> AssertionList [ctor assoc comm id: nil] .
+
+    op parseError : -> Assertions .
+    op `[_::_`] : AssertionList AssertionList -> Assertions .
+    op getsAssertions : Assertions -> AssertionList .
+    eq getsAssertions([ ASRL :: ASRL' ]) = ASRL .
+    op getfAssertions : Assertions -> AssertionList .
+    eq getfAssertions([ ASRL :: ASRL' ]) = ASRL' .
+
+    op sys : Term Term -> sAssertion [ctor] .
+    op fun : Term Term Term Term -> fAssertion [ctor] .
+    op getType : Assertion -> Sort .
+    eq getType(sys(PAT,FORM)) = 'sAssertion .
+    eq getType(fun(PAT,FORM,PAT',FORM')) = 'fAssertion .
+
+    op `[_::_`] : Term TermList -> SatTerm [ctor] .
+    op sat : -> SatResult [ctor] .
+    op sat : Nat -> SatResult [ctor] .
+    op unsat : Term Term Assertion Nat Substitution Position Nat -> SatResult [ctor] .
+    op unsat : InsTrace TraceSlice Assertion Nat Substitution Position Nat -> SatResult [ctor] .
+    op fix[_:_] : SatResult Rule? -> FixedResult [ctor] .
+    
+    op getTerm : SatResult -> Term .
+    eq getTerm(unsat(T,T*,ASR,SOL,SB,P,ATOM)) = T .
+    
+    op getTrace : SatResult -> InsTrace .
+    eq getTrace(unsat(IT,TS*,ASR,SOL,SB,P,ATOM)) = IT .
+    
+    op getTermSlice : SatResult -> Term .
+    eq getTermSlice(unsat(T,T*,ASR,SOL,SB,P,ATOM)) = T* .
+    
+    op getTraceSlice : SatResult -> TraceSlice .
+    eq getTraceSlice(unsat(IT,TS*,ASR,SOL,SB,P,ATOM)) = TS* .
+    
+    op getMatch : SatResult -> Nat .
+    eq getMatch(unsat(T,T*,ASR,SOL,SB,P,ATOM)) = SOL .
+    eq getMatch(unsat(IT,TS*,ASR,SOL,SB,P,ATOM)) = SOL .
+    
+    op getAssertion : SatResult -> Assertion .
+    eq getAssertion(unsat(T,T*,ASR,SOL,SB,P,ATOM)) = ASR .
+    eq getAssertion(unsat(IT,TS*,ASR,SOL,SB,P,ATOM)) = ASR .
+    
+    op getSub : SatResult -> Substitution .
+    eq getSub(unsat(T,T*,ASR,SOL,SB,P,ATOM)) = SB .
+    eq getSub(unsat(IT,TS*,ASR,SOL,SB,P,ATOM)) = SB .
+    
+    op getPos : SatResult -> Position .
+    eq getPos(unsat(T,T*,ASR,SOL,SB,P,ATOM)) = P .
+    eq getPos(unsat(IT,TS*,ASR,SOL,SB,P,ATOM)) = P .
+    
+    op getAtom : SatResult -> Nat .
+    eq getAtom(unsat(T,T*,ASR,SOL,SB,P,ATOM)) = ATOM .
+    eq getAtom(unsat(IT,TS*,ASR,SOL,SB,P,ATOM)) = ATOM .
+    
+    op getLHS : Rule -> Term .
+    eq getLHS((rl LAMBDA => RHO [ATS] .)) = LAMBDA .
+    eq getLHS((crl LAMBDA => RHO if COND [ATS] .)) = LAMBDA .
+
+    op getRHS : Rule -> Term .
+    eq getRHS((rl LAMBDA => RHO [ATS] .)) = RHO .
+    eq getRHS((crl LAMBDA => RHO if COND [ATS] .)) = RHO .
+endm
+
+mod ELP-PARSING is
+    pr ELP-OPS .
+
+    var M : Module .
+    vars T PAT PAT' FORM FORM' : Term .
+    var TL : TermList .
+    var N : Nat .
+    var F : Qid .
+    var FL : QidList .
+    var STR STR' : String .
+    vars ASRL ASRL' : AssertionList .
+
+    op trim : String -> String .
+    eq trim("") = "" .
+    eq trim(" ") = "" .
+    eq trim(STR) = trimLeft(trimRight(STR)) [owise] .
+
+    op trimLeft : String -> String .
+    eq trimLeft("") = "" .
+    eq trimLeft(" ") = "" .
+    eq trimLeft(STR) = if (find(STR," ",0) == 0) then trimLeft(substr(STR,1,length(STR))) else STR fi [owise] .
+
+    op trimRight : String -> String .
+    eq trimRight("") = "" .
+    eq trimRight(" ") = "" .
+    eq trimRight(STR) = if (find(STR," ",length(STR)) =/= notFound) then trimRight(substr(STR,0,sd(length(STR),1))) else STR fi [owise] .
+
+    op trim : QidList -> QidList .
+    eq trim(nil) = nil .
+    eq trim(' FL) = trim(FL) .
+    eq trim(F FL) = F trim(FL) [owise] .
+
+    op str2ql : String -> QidList .
+    eq str2ql(STR) = trim(str2ql'(STR)) .
+
+    op str2ql' : String -> QidList .
+    eq str2ql'("") = nil .
+    eq str2ql'(STR) = 
+        if myfind(substr(STR, findNonSpace(STR), length(STR)), " (){}[],", 0) == (notFound).FindResult
+        then qid(substr(STR, findNonSpace(STR), length(STR))) 
+        else qid(substr(STR, findNonSpace(STR), myfind(substr(STR, findNonSpace(STR), length(STR)), " (){}[],", 0))) (if substr(STR, findNonSpace(STR) + myfind(substr(STR, findNonSpace(STR), length(STR)), " (){}[],", 0), 1) =/= " " then qid(substr(STR, findNonSpace(STR) + myfind(substr(STR, findNonSpace(STR), length(STR)), " (){}[],", 0), 1)) else nil fi) str2ql'(substr(STR, findNonSpace(STR) + myfind(substr(STR, findNonSpace(STR), length(STR)), " (){}[],", 0) + 1, length(STR)))
+        fi [owise] .
+
+    op findNonSpace : String -> Nat .
+    eq findNonSpace(STR) = findNonSpace(STR, 0) .
+
+    op findNonSpace : String Nat -> Nat .
+    eq findNonSpace(STR,N) = 
+        if (N < length(STR)) 
+        then 
+            if substr(STR,N,1) == " " 
+            then findNonSpace(STR,N + 1)  
+            else N
+            fi 
+        else length(STR)
+        fi .
+
+    op myfind : String String Nat -> FindResult .
+    eq myfind(STR,STR',N) = 
+        if (N < length(STR)) 
+        then 
+            if find(STR',substr(STR,N,1), 0) =/= notFound
+            then N
+            else myfind(STR,STR',N + 1)
+            fi
+        else notFound 
+        fi .
+
+    op parseTerm : Module String -> Term .
+    ceq parseTerm(M,STR) = T if T := getTerm(metaParse(M,str2ql(STR),anyType)) .
+    eq parseTerm(M,STR) = empty [owise] .
+
+    op parseAssertions : Module String -> Assertions .
+    eq parseAssertions(M,"") = parseError .
+    eq parseAssertions(M,STR) = parseAssertions''(M,parseAssertions'(M,STR),[ nil :: nil]) .
+
+    op parseAssertions' : Module String -> TermList .
+    eq parseAssertions'(M,"") = empty .
+    eq parseAssertions'(M,STR) = 
+        if find(STR,"ELP-SEP",0) == notFound 
+        then getTerm(metaParse(M,str2ql(STR),anyType))
+        else (getTerm(metaParse(M,str2ql(substr(STR,0,find(STR,"ELP-SEP",0) + -1)),anyType)),parseAssertions'(M,substr(STR,find(STR,"ELP-SEP",0) + 8,length(STR))))
+        fi [owise] .
+
+    op parseAssertions'' : Module TermList Assertions -> Assertions .
+    eq parseAssertions''(M,empty,[ ASRL :: ASRL' ]) = [ ASRL :: ASRL' ] .
+    eq parseAssertions''(M,('_`{_`}[PAT,FORM],TL),[ ASRL :: ASRL' ]) = parseAssertions''(M,TL,[ ASRL sys(PAT,getTerm(metaNormalize(M,FORM))) :: ASRL' ]) .
+    eq parseAssertions''(M,('_`{_`}->_`{_`}[PAT,FORM,PAT',FORM'],TL),[ ASRL :: ASRL' ]) = parseAssertions''(M,TL,[ ASRL :: ASRL' fun(PAT,getTerm(metaNormalize(M,FORM)),PAT',getTerm(metaNormalize(M,FORM'))) ]) .
+    eq parseAssertions''(M,(T,TL),[ ASRL :: ASRL' ]) = parseError [owise] .
+endm
+
+mod ELP-MODULE is
+    pr ELP-OPS .
+
+    var M : Module .
+    var H : Header .
+    vars F F' : Qid .
+    var IL : ImportList .
+    var SS : SortSet .
+    var SSDS : SubsortDeclSet .
+    var OPDS : OpDeclSet .
+    var MAS : MembAxSet .
+    var EQS : EquationSet .
+    var RLS : RuleSet .
+    var ATS : AttrSet .
+    vars T LAMBDA RHO : Term .
+    var COND : Condition .
+    var N : Nat .
+    vars TYP TYP' : Type .
+    var OPD : OpDecl .
+    var R : Rule .
+    var SO : Sort .
+
+    op isConditional : Module -> Bool .
+    eq isConditional(fmod H is IL sorts SS . SSDS OPDS MAS ((ceq LAMBDA = RHO if COND [ATS] .) EQS) endfm) = true .
+    eq isConditional(mod H is IL sorts SS . SSDS OPDS MAS ((ceq LAMBDA = RHO if COND [ATS] .) EQS) RLS endm) = true .
+    eq isConditional(mod H is IL sorts SS . SSDS OPDS MAS EQS ((crl LAMBDA => RHO if COND [ATS] .) RLS) endm) = true .
+    eq isConditional(fth F is IL sorts SS . SSDS OPDS MAS ((ceq LAMBDA = RHO if COND [ATS] .) EQS) endfth) = true .
+    eq isConditional(th F is IL sorts SS . SSDS OPDS MAS ((ceq LAMBDA = RHO if COND [ATS] .) EQS) RLS endth) = true .
+    eq isConditional(th F is IL sorts SS . SSDS OPDS MAS EQS ((crl LAMBDA => RHO if COND [ATS] .) RLS) endth) = true .
+    eq isConditional(M) = false [owise] .
+
+    op addVariant : Module -> Module .
+    eq addVariant(fmod H is IL sorts SS . SSDS OPDS MAS EQS endfm) = fmod H is IL sorts SS . SSDS OPDS MAS addVariant(EQS) endfm .
+    eq addVariant(mod H is IL sorts SS . SSDS OPDS MAS EQS RLS endm) = mod H is IL sorts SS . SSDS OPDS MAS addVariant(EQS) labelRls(RLS,1) endm .
+    eq addVariant(fth F is IL sorts SS . SSDS OPDS MAS EQS endfth) = fth F is IL sorts SS . SSDS OPDS MAS addVariant(EQS) endfth .
+    eq addVariant(th F is IL sorts SS . SSDS OPDS MAS EQS RLS endth) = th F is IL sorts SS . SSDS OPDS MAS addVariant(EQS) labelRls(RLS,1) endth .
+
+    op addVariant : EquationSet -> EquationSet .
+    eq addVariant(none) = none .
+    eq addVariant((eq LAMBDA = RHO [ATS variant] .) EQS) = (eq LAMBDA = RHO [ATS variant] .) addVariant(EQS) .
+    eq addVariant((eq LAMBDA = RHO [ATS] .) EQS) = (eq LAMBDA = RHO [ATS variant] .) addVariant(EQS) [owise] .
+    eq addVariant((ceq LAMBDA = RHO if COND [ATS] .) EQS) = (ceq LAMBDA = RHO if COND [ATS] .) addVariant(EQS) .
+
+    op labelMbs : MembAxSet Nat -> MembAxSet .
+    eq labelMbs(none,N) = none .
+    eq labelMbs((mb T : SO [ATS label(F)] .) MAS,N) = (mb T : SO [ATS label(F)] .) labelMbs(MAS,N) .
+    eq labelMbs((mb T : SO [ATS] .) MAS,N) = (mb T : SO [ATS label(qid("Label-MB" + string(N,10)))] .) labelMbs(MAS,(N + 1)) [owise] .
+    eq labelMbs((cmb T : SO if COND [ATS label(F)] .) MAS,N) = (cmb T : SO if COND [ATS label(F)] .) labelMbs(MAS,N) .
+    eq labelMbs((cmb T : SO if COND [ATS] .) MAS,N) = (cmb T : SO if COND [ATS label(qid("Label-MB" + string(N,10)))] .) labelMbs(MAS,N + 1) [owise] .
+
+    op labelEqs : EquationSet Nat -> EquationSet .
+    eq labelEqs(none,N) = none .
+    eq labelEqs((eq LAMBDA = RHO [ATS label(F)] .) EQS,N) = (eq LAMBDA = RHO [ATS label(F)] .) labelEqs(EQS,N) .
+    eq labelEqs((eq LAMBDA = RHO [ATS] .) EQS,N) = (eq LAMBDA = RHO [ATS label(qid("Label-EQ" + string(N,10)))] .) labelEqs(EQS,(N + 1)) [owise] .
+    eq labelEqs((ceq LAMBDA = RHO if COND [ATS label(F)] .) EQS,N) = (ceq LAMBDA = RHO if COND [ATS label(F)] .) labelEqs(EQS,N) .
+    eq labelEqs((ceq LAMBDA = RHO if COND [ATS] .) EQS,N) = (ceq LAMBDA = RHO if COND [ATS label(qid("Label-EQ" + string(N,10)))] .) labelEqs(EQS,N + 1) [owise] .
+
+    op labelRls : RuleSet Nat -> RuleSet .
+    eq labelRls(none,N) = none .
+    eq labelRls((rl LAMBDA => RHO [ATS label(F)] .) RLS,N) = (rl LAMBDA => RHO [ATS label(F)] .) labelRls(RLS,N) .
+    eq labelRls((rl LAMBDA => RHO [ATS] .) RLS,N) = (rl LAMBDA => RHO [ATS label(qid("Label-RL" + string(N,10)))] .) labelRls(RLS,N + 1) [owise] .
+    eq labelRls((crl LAMBDA => RHO if COND [ATS label(F)] .) RLS,N) = (crl LAMBDA => RHO if COND [ATS label(F)] .) labelRls(RLS,N) .
+    eq labelRls((crl LAMBDA => RHO if COND [ATS] .) RLS,N) = (crl LAMBDA => RHO if COND [ATS label(qid("Label-RL" + string(N,10)))] .) labelRls(RLS,N + 1) [owise] .
+
+    op labelModule : Module -> Module .
+    eq labelModule(fmod H is IL sorts SS . SSDS OPDS MAS EQS endfm) = fmod H is IL sorts SS . SSDS OPDS labelMbs(MAS,1) labelEqs(EQS,1) endfm .
+    eq labelModule(mod H is IL sorts SS . SSDS OPDS MAS EQS RLS endm) = mod H is IL sorts SS . SSDS OPDS labelMbs(MAS,1) labelEqs(EQS,1) labelRls(RLS,1) endm .
+    eq labelModule(fth F is IL sorts SS . SSDS OPDS MAS EQS endfth) = fth F is IL sorts SS . SSDS OPDS labelMbs(MAS,1) labelEqs(EQS,1) endfth .
+    eq labelModule(th F is IL sorts SS . SSDS OPDS MAS EQS RLS endth) = th F is IL sorts SS . SSDS OPDS labelMbs(MAS,1) labelEqs(EQS,1) labelRls(RLS,1) endth .
+
+    op getRule : Module Qid -> Rule .
+    eq getRule((mod H is IL sorts SS . SSDS OPDS MAS EQS ((rl LAMBDA => RHO [ATS label(F)] .) RLS) endm),F) = (rl LAMBDA => RHO [ATS label(F)] .) .
+    eq getRule((mod H is IL sorts SS . SSDS OPDS MAS EQS ((crl LAMBDA => RHO if COND [ATS label(F)] .) RLS) endm),F) = (crl LAMBDA => RHO if COND [ATS label(F)] .) .
+    eq getRule((th F is IL sorts SS . SSDS OPDS MAS EQS ((rl LAMBDA => RHO [ATS label(F)] .) RLS) endth),F) = (rl LAMBDA => RHO [ATS label(F)] .) .
+    eq getRule((th F is IL sorts SS . SSDS OPDS MAS EQS ((crl LAMBDA => RHO if COND [ATS label(F)] .) RLS) endth),F) = (crl LAMBDA => RHO if COND [ATS label(F)] .) .
+    eq getRule(M,F) = none [owise] .
+
+    op getQidList : RuleSet -> QidList .
+    eq getQidList(none) = nil .
+    eq getQidList((rl LAMBDA => RHO [ATS label(F)] .) RLS) = F getQidList(RLS) .
+    eq getQidList((rl LAMBDA => RHO [ATS] .) RLS) = getQidList(RLS) [owise] .
+    eq getQidList((crl LAMBDA => RHO if COND [ATS label(F)] .) RLS) = F getQidList(RLS) .
+    eq getQidList((crl LAMBDA => RHO if COND [ATS] .) RLS) = getQidList(RLS) [owise] .
+
+    op getExeRules : RuleSet -> RuleSet .
+    eq getExeRules(none) = none .
+    eq getExeRules((rl LAMBDA => RHO [ATS nonexec] .) RLS) = getExeRules(RLS) .
+    eq getExeRules((crl LAMBDA => RHO if COND [ATS nonexec] .) RLS) = getExeRules(RLS) .
+    eq getExeRules((rl LAMBDA => RHO [ATS] .) RLS) = (rl LAMBDA => RHO [ATS] .) getExeRules(RLS) [owise] .
+    eq getExeRules((crl LAMBDA => RHO if COND [ATS] .) RLS) = (crl LAMBDA => RHO if COND [ATS] .) getExeRules(RLS) [owise] .
+endm
+
+mod ELP-VARIABLE is
+    pr ELP-OPS .
+
+    var N : Nat .
+    var V : Variable .
+    vars TL TL' : TermList .
+    var NETL : NeTermList .
+    var TYP : Type .
+    var C : Constant .
+    var T : Term .
+    var F : Qid .
+    var KIND : Kind .
+
+    op bullet : Type Nat -> Bullet .
+    eq bullet(TYP,N) = qid("#!" + string(N,10) + ":" + string(TYP)) .
+
+    op bullet : Kind Nat -> Bullet .
+    eq bullet(KIND,N) = qid("#!" + string(N,10) + ":" + string(KIND)) .
+    
+    op isRelevant : TermList -> Bool .
+    eq isRelevant(empty) = false .
+    eq isRelevant(V) = if isBullet(V) then false else true fi .
+    eq isRelevant(TL) = true [owise] .
+
+    op isIgnored : TermList -> Bool .
+    eq isIgnored(empty) = true .
+    eq isIgnored(V) = if (substr(string(V),0,1) == "#") then true else false fi .
+    eq isIgnored(TL) = false [owise] .
+
+    op isVariable : TermList -> Bool .
+    eq isVariable(V) = true .
+    eq isVariable(TL) = false [owise] . 
+
+    op isBullet : TermList -> Bool .
+    eq isBullet(V) = if (substr(string(V),0,2) == "#!") then true else false fi .
+    eq isBullet(TL) = false [owise] .
+    
+    op index : Variable -> Nat .
+    eq index(V) = 
+        if (isBullet(V))
+        then rat(substr(string(V),2,rfind(string(V),":",length(string(V))) + -2), 10)
+        else 999999
+        fi .
+    
+    op Vars : Term -> TermList .
+    eq Vars(empty) = empty .
+    eq Vars(V) = V .
+    eq Vars(C) = empty .
+    eq Vars(F[TL]) = Vars(TL) .
+    eq Vars((T,NETL)) = (Vars(T),Vars(NETL)) .
+    
+    op _in_ : Variable TermList -> Bool .
+    eq (V in (TL,V,TL')) = true .
+    eq (V in TL) = false [owise] .
+endm
+
+mod ELP-POSITION is
+    pr ELP-OPS .
+    pr ELP-VARIABLE .
+
+    vars C C' : Constant .
+    vars V V' : Variable .
+    vars N N' NC : Nat .
+    vars F F' : Qid .
+    vars T T' : Term .
+    vars P P' P'' : Position .
+    vars SP SP' : Set{Position} .
+    vars GTL GTL' : GTermList .
+    vars TL TL' TL1 TL2 TL3 : TermList .
+    var NETL : NeTermList .
+    var CO : Context .
+    var COL : NeCTermList .
+
+    op mPos : Term -> Position .
+    eq mPos(T) = mPos'(T,Lambda) .
+
+    op mPos' : Term Position -> Position .
+    eq mPos'(empty,P) = empty .
+    eq mPos'(V,P) = if isBullet(V) then empty else P fi .
+    eq mPos'(C,P) = P .
+    eq mPos'(F[GTL],P) = insert(P,mPos'(GTL,(P . 1))) .
+    eq mPos'((T,GTL),(P . N)) = union(mPos'(T,(P . N)),mPos'(GTL,(P . (N + 1)))) [owise] .
+
+    op getChildrenPos : Term -> TermListPosList .
+    eq getChildrenPos(F[TL]) = getChildrenPos'(TL,Lambda . 1,F) .
+
+    op getChildrenPos' : Term Nat Qid -> TermListPosList .
+    eq getChildrenPos'(empty,P,F) = nil .
+    eq getChildrenPos'((F[TL1],TL2),(P . N),F') = 
+        if (F == F') 
+        then (getChildrenPos'(TL1,((P . N) . 1),F) getChildrenPos'(TL2,(P . (N + 1)),F)) 
+        else ([ F[TL1] : (P . N) ] getChildrenPos'(TL2,(P . (N + 1)),F')) 
+        fi .
+    eq getChildrenPos'((T,TL),(P . N),F) = [ T : (P . N) ] getChildrenPos'(TL,(P . (N + 1)),F) [owise] .
+
+    op deepenPos : Term Position -> Position .
+    eq deepenPos(T,(empty).Set{Position}) = (empty).Set{Position} .
+    eq deepenPos(T,(P , SP)) = union(deepenPos'(T,P,Lambda),deepenPos(T,SP)) [owise] .
+
+    op isPrefix : Position Position -> Bool .
+    eq isPrefix(P,P . P') = true .
+    eq isPrefix(P,P') = false [owise] .
+
+    op deepenPos' : Term Position Position -> Position .
+    eq deepenPos'(C,P,P') = if (isPrefix(P,P')) then P' else empty fi .
+    eq deepenPos'(V,P,P') = if (isPrefix(P,P')) then P' else empty fi .
+    eq deepenPos'(F[TL],P,P') = if (isPrefix(P,P')) then union(P',deepenPos'(TL,P,(P' . 1))) else deepenPos'(TL,P,(P' . 1)) fi .
+    eq deepenPos'((T,TL),P,(P' . N)) = union(deepenPos'(T,P,(P' . N)),deepenPos'(TL,P,(P' . (N + 1)))) [owise] .
+
+    op extendPos : Position -> Position .
+    eq extendPos(empty) = Lambda .
+    eq extendPos(noPos) = Lambda .
+    eq extendPos(Lambda) = Lambda .
+    eq extendPos((P, SP)) = union(extendPos'(P),extendPos'(SP)) [owise] .
+
+    op extendPos' : Position -> Position .
+    eq extendPos'(empty) = Lambda .
+    eq extendPos'(noPos) = Lambda .
+    eq extendPos'(Lambda) = Lambda .
+    eq extendPos'(P . N) = insert(P . N,extendPos'(P)) .
+    eq extendPos'((P, SP)) = union(extendPos'(P),extendPos'(SP)) [owise] .
+
+    op recoverPos : Term Position Nat -> Position .
+    eq recoverPos(empty,P,NC) = empty .
+    eq recoverPos(V,P,NC) = if rat(substr(string(V),2,rfind(string(V),":",length(string(V))) + -2), 10) >= NC then P else empty fi .
+    eq recoverPos(C,P,NC) = empty .
+    eq recoverPos(F[TL],P,NC) = recoverPos(TL,P . 1,NC) .
+    eq recoverPos((T,TL),P . N,NC) = union(recoverPos(T,P . N,NC),recoverPos(TL,P . (N + 1),NC)) [owise] .
+
+    op getHolePos : Context -> Position .
+    eq getHolePos(C:Context) = getHolePos'(C:Context,Lambda) .
+
+    op getHolePos' : Context Position -> Position .
+    eq getHolePos'([],P) = P .
+    eq getHolePos'(F[COL],P) = getHolePos'(COL,P . 1) .
+    eq getHolePos'((CO,TL),P . N) = getHolePos'(CO,P . N) [owise] .
+    eq getHolePos'((T,COL),P . N) = getHolePos'(COL,P . (N + 1)) [owise] .
+
+    op getPrefix : Set{Position} -> Position .
+    eq getPrefix(P) = P .
+    eq getPrefix((P . N,P . N',SP)) = if (N == N') then getPrefix((P . N,SP)) else getPrefix((P,SP)) fi .
+    eq getPrefix((P . N,P . N' . P',SP)) = if (N == N') then getPrefix((P . N,SP)) else getPrefix((P,SP)) fi .
+    eq getPrefix(SP) = Lambda [owise] .
+    
+    op compactPos : Set{Position} -> Position .
+    eq compactPos(P) = P .
+    eq compactPos((P . N,P . N . P',SP)) = compactPos((P . N,SP)) .
+    eq compactPos(SP) = SP [owise] .
+
+    op subPos : Position Position -> Position .
+    eq subPos(P,P) = Lambda .
+    eq subPos(Lambda,P) = P .
+    eq subPos(P,P') = subPos'(P,P') [owise] .
+    
+    op subPos' : Position Position -> Position .
+    eq subPos'(P,P . P') = Lambda . P' .
+    eq subPos'(P,P . N) = Lambda . N .
+    eq subPos'(P,P . P' . N) = Lambda . P' . N .
+    eq subPos'(P,P') = P [owise] .
+endm
+
+mod ELP-SUBSTITUTION is
+    pr ELP-POSITION .
+
+    var M : Module .
+    vars C C' : Constant .
+    vars F F' : Qid .
+    var SCN : SubCondNat .
+    vars N NC NC' : Nat .
+    vars V V' : Variable .
+    vars T T' : Term .
+    vars TL TL' : TermList .
+    vars COND COND' : Condition .
+    vars SB SB' SB1 SB2 SB3 THETA : Substitution .
+    vars SBL SBL' SBL1 SBL2 SBL3 SBL4 : SubList .
+    var MGUP : mguPair .
+    var P : Position .
+    var B : Bool .
+    var SO : Sort .
+    var GTL : GroundTermList .
+    var NETL NETL' : NeTermList .
+    
+    op getSub : Term Term -> Substitution .
+    eq getSub(T,T) = none .
+    eq getSub(C,V) = (V <- C) .
+    eq getSub(F[TL],V) = (V <- F[TL]) .
+    eq getSub(F[TL],F[TL']) = getSub(TL,TL') .
+    eq getSub((T,TL),(T',TL')) = getSub(T,T') ; getSub(TL,TL') [owise] .
+
+    op getVariable : Term Substitution -> Variable .
+    eq getVariable(T,V <- T ; SBL) = V .
+    eq getVariable(T,SBL) = none [owise] .
+
+    op isRelevant : Substitution -> Bool .
+    eq isRelevant((none).Substitution) = false .
+    eq isRelevant(V <- T ; SB) = if (isVariable(T)) then isRelevant(SB) else true fi .
+
+    op reduceSub : Module Substitution -> Substitution .
+    eq reduceSub(M,none) = none .
+    eq reduceSub(M,((V <- T) ; none)) = (V <- getTerm(metaReduce(M,T))) .
+    eq reduceSub(M,((V <- T) ; SB)) = (V <- getTerm(metaReduce(M,T))) ; reduceSub(M,SB) [owise] .
+
+    op buildInitialSub : Module Substitution Nat -> SubNat .
+    eq buildInitialSub(M,none,NC) = [ none | NC ] .
+    eq buildInitialSub(M,((V <- T) ; none),NC) = [ V <- bullet(getType(metaNormalize(M,T)),NC) | (NC + 1) ] .
+    ceq buildInitialSub(M,((V <- T) ; SB1),NC) = [ SB2 | NC' ]
+        if [ SB3 | NC' ] := buildInitialSub(M,SB1,(NC + 1)) 
+        /\ SB2 := V <- bullet(getType(metaNormalize(M,T)),NC) ; SB3 [owise] .
+
+    op refinePartialSub : Substitution Substitution -> Substitution .
+    eq refinePartialSub(none,SB) = none .
+    eq refinePartialSub((V <- T) ; none,SB) = (V <- applySub(T,SB)) .
+    eq refinePartialSub((V <- T) ; SB,SB') = (V <- applySub(T,SB')) ; refinePartialSub(SB,SB') .
+
+    op applySub : TermList Substitution -> TermList .
+    eq applySub(V,(V <- T) ; SB) = T .
+    eq applySub(F[TL], SB) = F[applySub(TL, SB)] .
+    eq applySub((T,NETL),SB) = (applySub(T,SB), applySub(NETL,SB)) .
+    eq applySub(T,SB) = T [owise] .
+    
+    op applySub2Sub : Substitution Substitution -> Substitution .
+    eq applySub2Sub((none).Substitution,SB) = none .
+    eq applySub2Sub(V <- T ; SBL,SB) =  V <- applySub(T,SB) ; applySub2Sub(SBL,SB) .
+
+    op applySub2Cond : Condition Substitution -> Condition .
+    eq applySub2Cond(nil,SB) = nil .
+    eq applySub2Cond(T : SO,SB) = applySub(T,SB) : SO .
+    eq applySub2Cond(T = T',SB) = applySub(T,SB) = applySub(T',SB) .
+    eq applySub2Cond(T := T',SB) = applySub(T,SB) := applySub(T',SB) .
+    eq applySub2Cond(T => T',SB) = applySub(T,SB) => applySub(T',SB) .
+    eq applySub2Cond(COND /\ COND',SB) = applySub2Cond(COND,SB) /\ applySub2Cond(COND',SB) [owise] .
+
+    op applySub2Mgu : mguPair Substitution -> mguPair .
+    eq applySub2Mgu((nil).mguPair,SB) = nil .
+    eq applySub2Mgu([ TL | TL' ] MGUP,SB) =  [ applySub(TL,SB) | applySub(TL',SB) ] applySub2Mgu(MGUP,SB) . ---TL??
+
+    op arity : TermList -> Nat .
+    eq arity(empty) = 0 .
+    eq arity((T,TL)) = 1 + arity(TL) .
+
+    op decompose : TermList TermList -> mguPair .
+    eq decompose(T,T') = [ T | T' ] .
+    eq decompose((T,NETL),(T',NETL')) = [ T | T' ] decompose(NETL,NETL') .
+
+    op occurs : Variable Term -> Bool .
+    eq occurs(V,empty) = false .
+    eq occurs(V,V') = if (V == V') then true else false fi .
+    eq occurs(V,C) = false .
+    eq occurs(V,F[TL]) = occurs(V,TL) .
+    eq occurs(V,(T,NETL)) = occurs(V,T) or occurs(V,NETL) .
+    
+    op mgu : Term Term -> Substitution .
+    eq mgu(T,T') = mgu([T | T'],none) .
+
+    op mgu : mguPair Substitution -> Substitution .
+    eq mgu(nil,THETA) = THETA .
+    eq mgu([C | C'] MGUP,THETA) = mgu(MGUP,THETA) .
+    eq mgu([V | V] MGUP,THETA) = mgu(MGUP,THETA) .
+    ceq mgu([V | T] MGUP,THETA) = mgu(applySub2Mgu(MGUP,V <- T), applySub2Sub(THETA,V <- T) ; V <- T) if V =/= T  /\ not(occurs(V,T)) .
+    ceq mgu([T | V] MGUP,THETA) = mgu(applySub2Mgu(MGUP,V <- T), applySub2Sub(THETA,V <- T) ; V <- T) if V =/= T  /\ not(occurs(V,T)) .
+    eq mgu([F[TL] | F'[TL']] MGUP,THETA) = if (F == F') then mgu([ TL | TL' ] MGUP,THETA) else none fi .
+    eq mgu([(T,TL) | (T',TL')] MGUP,THETA) = mgu'([ (T,TL) | (T',TL') ] MGUP,THETA) [owise] .
+
+    op mgu' : mguPair Substitution -> Substitution .
+    eq mgu'([ (T,empty) | (T',empty) ] MGUP,THETA) = mgu(MGUP,THETA) .
+    eq mgu'([ (T,TL) | (T',TL') ] MGUP,THETA) = mgu([ T | T' ] [ TL | TL' ] MGUP,THETA) [owise] .
+
+    op removeUseless : Substitution -> Substitution .
+    eq removeUseless(SB) = SB [owise] .
+
+    op removeEquals : Substitution Substitution -> Substitution .
+    eq removeEquals((V <- T ; SB),(V <- T' ; SB')) = removeEquals((SB ; V <- T),SB') .
+    eq removeEquals(SB,SB') = SB' [owise] .
+
+    op refine : Substitution Substitution -> Substitution .
+    eq refine(V <- V ; SB,SB') = refine(SB,SB') .
+    eq refine((V <- T ; SB),(V <- T' ; SB')) = refine(V <- T ; SB,SB') .
+    eq refine(SB,SB') = (SB ; SB') [owise] .
+
+    op composition : Substitution Substitution -> Substitution .
+    eq composition((none).Substitution,SB) = SB .
+    eq composition(SB,(none).Substitution) = SB .
+    eq composition(SB,SB') = refine(composition'(SB,SB'),SB') [owise] .
+
+    op composition' : Substitution Substitution -> Substitution .
+    eq composition'((none).Substitution,SB) = none .
+    eq composition'(SB,(none).Substitution) = SB .
+    eq composition'(V <- T ; SB,SB') = V <- applySub(T,SB') ; composition'(SB,SB') [owise] .
+
+    op pcomposition : Substitution Substitution -> Substitution .
+    eq pcomposition((none).Substitution,SB) = SB .
+    eq pcomposition(SB,(none).Substitution) = SB .
+    eq pcomposition(SB,SB') = mgu('F[pcomposition'(SB,SB',true)],'F[pcomposition'(SB,SB',false)]) [owise] .
+
+    op pcomposition' : Substitution Substitution Bool -> TermList .
+    eq pcomposition'((none).Substitution,(none).Substitution,B) = empty .
+    eq pcomposition'((none).Substitution,V <- T ; SB,B) = if B then (V,pcomposition'((none).Substitution,SB,B)) else (T,pcomposition'((none).Substitution,SB,B)) fi .
+    eq pcomposition'(V <- T ; SB,SB',B) = if B then (V,pcomposition'(SB,SB',B)) else (T,pcomposition'(SB,SB',B)) fi [owise] .
+
+    op cleanBullets : Substitution -> Substitution .
+    eq cleanBullets((none).Substitution) = (none).Substitution .
+    eq cleanBullets(V <- T ; SB) = if isBullet(V) then cleanBullets(SB) else (V <- T ; cleanBullets(SB)) fi .
+    
+    op _in_ : Substitution Substitution -> Bool .
+    eq (SB in (SB ; SB')) = true .
+    eq (SB in SB') = false [owise] .
+    
+    op removeFreshVariant : Substitution -> Substitution .
+    eq removeFreshVariant(none) = none .
+    eq removeFreshVariant(V <- T ; SB) = if (hasFreshVariant(V) or-else hasFreshVariant(T)) then removeFreshVariant(SB) else V <- T ; removeFreshVariant(SB) fi .
+    
+    op getFreshVariant : Substitution -> Substitution .
+    eq getFreshVariant(none) = none .
+    eq getFreshVariant(V <- T ; SB) = if (hasFreshVariant(V) or-else hasFreshVariant(T)) then V <- T ; getFreshVariant(SB) else getFreshVariant(SB) fi .
+    
+    op hasFreshVariant : TermList -> Bool .
+    eq hasFreshVariant(empty) = false .
+    eq hasFreshVariant(V) = if (substr(string(V),0,1) == "%") then true else false fi .
+    eq hasFreshVariant(C) = false .
+    eq hasFreshVariant(F[TL]) = hasFreshVariant(TL) .
+    eq hasFreshVariant((T,NETL)) = hasFreshVariant(T) or-else hasFreshVariant(NETL) [owise] .
+endm
+
+mod ELP-BASIC is
+    pr ELP-MODULE .
+    pr ELP-PARSING .
+    pr ELP-SUBSTITUTION .
+    pr ELP-POSITION .
+
+    var M : Module .
+    var N : Nat .
+    var SB : Substitution .
+    var C : Constant .
+    var V : Variable .
+    vars F F' : Qid .
+    vars P P' : Position .
+    vars T T' T1 T2 LAMBDA RHO : Term .
+    vars TL TL' TL'' : TermList .
+    var ATS : AttrSet .
+    vars TYP TYP' : Type .
+    var R4T : Result4Tuple .
+    var CO : Context .
+    var COL : NeCTermList .
+    var COND : Condition .
+    var ITR : ITrace .
+    var B : Bool .
+    vars STR STR1 STR2 : String .
+    var NETL : NeTermList .
+
+    op NoApply : -> Result4Tuple .
+
+    op getBulletPos : Term Position -> Position .
+    eq getBulletPos(T,P . N) = if isVariable(getSubTerm(T,P . N)) then (P . N) else getBulletPos(T,P) fi .
+    eq getBulletPos(T,P) = P [owise] .
+
+    op getSubTerm : Term Position -> Term .
+    eq getSubTerm(T,P) = getSubTerm'(T,P,Lambda) .
+
+    op getSubTerm' : Term Position Position -> TermList .
+    eq getSubTerm'(V,P,P) = V .
+    eq getSubTerm'(V,P,P') = empty [owise] .
+    eq getSubTerm'(C,P,P) = C .
+    eq getSubTerm'(C,P,P') = empty [owise] .
+    eq getSubTerm'(F[TL],P,P) = F[TL] .
+    eq getSubTerm'(F[TL],P,P') = getSubTerm'(TL,P,(P' . 1)) [owise] .
+    eq getSubTerm'((T,NETL),P,(P' . N)) = getSubTerm'(T,P,(P' . N)),getSubTerm'(NETL,P,(P' . (N + 1))) .
+
+    op replaceSubTerm : Term Position Term -> Term .
+    eq replaceSubTerm(T,P,T') = replaceSubTerm'(T,P,Lambda,T') .
+
+    op replaceSubTerm' : Term Position Position Term -> Term .
+    eq replaceSubTerm'(V,P,P,T') = T' .
+    eq replaceSubTerm'(V,P,P',T') = V [owise] .
+    eq replaceSubTerm'(C,P,P,T') = T' .
+    eq replaceSubTerm'(C,P,P',T') = C [owise] .
+    eq replaceSubTerm'(F[TL],P,P,T') = T' .
+    eq replaceSubTerm'(F[TL],P,P',T') = F[replaceSubTerm'(TL,P,(P' . 1),T')] [owise] .
+    eq replaceSubTerm'((T,NETL),P,(P' . N),T') = replaceSubTerm'(T,P,(P' . N),T'),replaceSubTerm'(NETL,P,(P' . (N + 1)),T') .
+
+    op applyRule : Module Term Qid Nat TermList -> Result4Tuple .
+    eq applyRule(M,T,F,N,TL) = applyRule'(M,T,F,N,TL,NoApply) .
+
+    op applyRule' : Module Term Qid Nat TermList Result4Tuple -> Result4Tuple .
+    ceq applyRule'(M,T,F,N,T',R4T) = applyRule'(M,T,F,(N + 1),T',{T1,TYP,SB,CO})
+        if {T1,TYP,SB,CO} := metaXapply(M,T,F,none,0,unbounded,N) 
+        /\ {T2,TYP'} := metaNormalize(M,T') 
+        /\ T1 == T2 .
+    eq applyRule'(M,T,F,N,T',R4T) = 
+        if (metaXapply(M,T,F,none,0,unbounded,N) == failure) 
+        then R4T 
+        else applyRule'(M,T,F,(N + 1),T',R4T) 
+        fi [owise] .
+
+    op getLabel : Equation -> Qid .
+    eq getLabel(eq LAMBDA = RHO [ATS label(F)] .) = F .
+    eq getLabel(ceq LAMBDA = RHO if COND [ATS label(F)] .) = F .
+    eq getLabel(E:Equation) = qid("builtIn") [owise] .
+
+    op getLabel : Rule -> Qid .
+    eq getLabel(rl LAMBDA => RHO [ATS label(F)] .) = F .
+    eq getLabel(crl LAMBDA => RHO if COND [ATS label(F)] .) = F .
+
+    op redTrace : Module Term Bool -> ITrace .
+    eq redTrace(M,T,B) = labelTrace(M,metaReducePath(M,T,B)) .
+
+    op labelTrace : Module ITrace -> ITrace .
+    eq labelTrace(M,nil) = nil .
+    eq labelTrace(M,{(eq LAMBDA = RHO [ATS label(F)] .),SB,CO} ITR) = {(eq LAMBDA = RHO [ATS label(F)] .),SB,CO} labelTrace(M,ITR) .
+    eq labelTrace(M,{(eq LAMBDA = RHO [ATS] .),SB,CO} ITR) = labelTrace'(M,{(eq LAMBDA = RHO [ATS] .),SB,CO}) labelTrace(M,ITR) [owise] .
+    eq labelTrace(M,{(ceq LAMBDA = RHO if COND [ATS label(F)] .),SB,CO} ITR) = {(ceq LAMBDA = RHO if COND [ATS label(F)] .),SB,CO} labelTrace(M,ITR) .
+    eq labelTrace(M,{(ceq LAMBDA = RHO if COND [ATS] .),SB,CO} ITR) = {(ceq LAMBDA = RHO if COND [ATS label('builtIn)] .),SB,CO} labelTrace(M,ITR) [owise] .
+
+    op labelTrace' : Module ITrace -> ITrace .
+    eq labelTrace'(M,{(eq 'if_then_else_fi['true.Bool,T1,T2] = T1 [ATS] .),SB,CO} ITR) = {(eq 'if_then_else_fi['true.Bool,qid("CASE_TRUE:" + string(getType(metaNormalize(M,T1)))),qid("CASE_FALSE:" + string(getType(metaNormalize(M,T2))))] = qid("CASE_TRUE:" + string(getType(metaNormalize(M,T1)))) [ATS label('builtIn)] .),(qid("CASE_TRUE:" + string(getType(metaNormalize(M,T1)))) <- T1 ; qid("CASE_FALSE:" + string(getType(metaNormalize(M,T2)))) <- T2),CO} labelTrace(M,ITR) .
+    eq labelTrace'(M,{(eq 'if_then_else_fi['false.Bool,T1,T2] = T2 [ATS] .),SB,CO} ITR) = {(eq 'if_then_else_fi['false.Bool,qid("CASE_TRUE:" + string(getType(metaNormalize(M,T1)))),qid("CASE_FALSE:" + string(getType(metaNormalize(M,T2))))] = qid("CASE_FALSE:" + string(getType(metaNormalize(M,T2)))) [ATS label('builtIn)] .),(qid("CASE_TRUE:" + string(getType(metaNormalize(M,T1)))) <- T1 ; qid("CASE_FALSE:" + string(getType(metaNormalize(M,T2)))) <- T2),CO} labelTrace(M,ITR) .
+    eq labelTrace'(M,{(eq LAMBDA = RHO [ATS] .),SB,CO} ITR) = {(eq LAMBDA = RHO [ATS label('builtIn)] .),SB,CO} labelTrace(M,ITR) [owise] .
+
+    op replaceHole : Context Term -> Term .
+    eq replaceHole([],T) = T .
+    eq replaceHole(F[COL],T) = F[replaceHole(COL,T)] .
+    eq replaceHole((CO,TL),T) = (replaceHole(CO,T),TL) [owise] .
+    eq replaceHole((T,COL),T') = (T,replaceHole(COL,T')) [owise] .
+
+    op putHole : Term Position -> Context .
+    eq putHole(T,P) = putHole'(T,P,Lambda) .
+    
+    op putHole' : Term Position Position -> Term .
+    eq putHole'(V,P,P) = [] .
+    eq putHole'(V,P,P') = V [owise] .
+    eq putHole'(C,P,P) = [] .
+    eq putHole'(C,P,P') = C [owise] .
+    eq putHole'(F[TL],P,P) = [] .
+    eq putHole'(F[TL],P,P') = F[putHole'(TL,P,(P' . 1))] [owise] .
+    eq putHole'((T,NETL),P,(P' . N)) = putHole'(T,P,(P' . N)),putHole'(NETL,P,(P' . (N + 1))) .
+
+    op getNC : TermList -> Nat .
+    eq getNC(empty) = 0 .
+    eq getNC(C) = 0 .
+    eq getNC(V) = if (substr(string(V),2,(rfind(string(V),":",length(string(V))) + -2)) == "") then 0 else rat(substr(string(V),2,(rfind(string(V),":",length(string(V))) + -2)), 10) fi .
+    eq getNC(F[TL]) = getNC(TL) . 
+    eq getNC((T,TL)) = max(getNC(T),getNC(TL)) [owise] .
+
+    op removeDuplicates : TermList -> TermList .
+    eq removeDuplicates((TL,T,TL',T,TL'')) = removeDuplicates((TL,T,TL',TL'')) .
+    eq removeDuplicates(TL) = TL [owise] .
+
+    op getOutermost : Module Term -> TermList [memo] .
+    eq getOutermost(M,T) = removeDuplicates(metaOutermost(M,T)) .
+
+    op isCanonical : Module Term -> Bool .
+    eq isCanonical(M,T) = if (getTerm(metaReduce(M,T)) == getTerm(metaNormalize(M,T))) then true else false fi .
+
+    op flatten : Module TermList -> TermList [memo] .
+    eq flatten(M,empty) = empty .
+    eq flatten(M,V) = V .
+    eq flatten(M,C) = C .
+    eq flatten(M,F[TL]) = if not(metaAssociative(M,F[TL])) then F[flatten(M,TL)] else F[flatten'(M,F,TL)] fi .
+    eq flatten(M,(T,NETL)) = (flatten(M,T),flatten(M,NETL)) .
+
+    op flatten' : Module Qid TermList -> TermList .
+    eq flatten'(M,F,empty) = empty .
+    eq flatten'(M,F,V) = V .
+    eq flatten'(M,F,C) = C .
+    eq flatten'(M,F,F'[TL]) = if (F == F') then flatten'(M,F,TL) else flatten(M,F'[TL]) fi .
+    eq flatten'(M,F,(T,TL)) = (flatten'(M,F,T),flatten'(M,F,TL)) [owise] .
+
+    op hasIdentity : AttrSet -> Bool .
+    eq hasIdentity(id(T) ATS) = true .
+    eq hasIdentity(left-id(T) ATS) = true .
+    eq hasIdentity(right-id(T) ATS) = true .
+    eq hasIdentity(ATS) = false [owise] .
+
+    op getIdentity : AttrSet -> Term .
+    eq getIdentity(id(T) ATS) = T .
+    eq getIdentity(left-id(T) ATS) = T .
+    eq getIdentity(right-id(T) ATS) = T .
+endm
+
+mod ELP-TRACE is
+    pr ELP-BASIC .
+
+    var M : Module .
+    var N : Nat .
+    var F : Qid .
+    vars S T T' T1 T2 T3 T4 LAMBDA RHO : Term .
+    vars R R' : Rule .
+    var E : Equation .
+    var ATS : AttrSet .
+    var COND : Condition .
+    vars SB SB' : Substitution .
+    vars P P' : Position .
+    var CO : Context .
+    vars TYP TYP' : Type .
+    var TR : Trace .
+    var TSTEP : TraceStep .
+    var ITR : ITrace .
+    vars IT IT' STEP : InsTrace .
+
+    op cutTrace : Module InsTrace Term -> InsTrace .
+    eq cutTrace(M,(S ->^{E,SB,P} T),T') =
+        if (T == T')
+        then (S ->^{E,SB,P} T)
+        else
+            if (getTerm(metaNormalize(M,T)) == getTerm(metaNormalize(M,T')))
+            then (S ->^{E,SB,P} T) createCommStep(M,T,T',Lambda)
+            else nil
+            fi
+        fi .
+    eq cutTrace(M,(S ->^{R,SB,P} T),T') =
+        if (T == T')
+        then (S ->^{R,SB,P} T)
+        else
+            if (getTerm(metaNormalize(M,T)) == getTerm(metaNormalize(M,T')))
+            then (S ->^{R,SB,P} T) createCommStep(M,T,T',Lambda)
+            else nil
+            fi
+        fi .
+    eq cutTrace(M,(S ->^{E,SB,P} T) IT,T') =
+        if (T == T')
+        then (S ->^{E,SB,P} T)
+        else
+            if (getTerm(metaNormalize(M,T)) == getTerm(metaNormalize(M,T')))
+            then (S ->^{E,SB,P} T) createCommStep(M,T,T',Lambda)
+            else (S ->^{E,SB,P} T) cutTrace(M,IT,T')
+            fi
+        fi [owise] .
+    eq cutTrace(M,(S ->^{R,SB,P} T) IT,T') =
+        if (T == T')
+        then (S ->^{R,SB,P} T)
+        else
+            if (getTerm(metaNormalize(M,T)) == getTerm(metaNormalize(M,T')))
+            then (S ->^{R,SB,P} T) createCommStep(M,T,T',Lambda)
+            else (S ->^{R,SB,P} T) cutTrace(M,IT,T')
+            fi
+        fi [owise] .
+
+    op buildInsTrace : Module Term Term -> InsTrace .
+    eq buildInsTrace(M,S,T) =
+        if (getTerm(metaNormalize(M,S)) == getTerm(metaNormalize(M,T)))
+        then createCommStep(M,S,T,Lambda)
+        else
+            if (getTerm(metaReduce(M,S)) == getTerm(metaReduce(M,T)))
+            then cutTrace(M,buildInsTraceEQ(M,S,redTrace(M,S,false)),T)
+            else
+                if ((metaSearchPath(M,S,T,nil,'+,100,0) == failure) or-else (buildInsTraceRL(M,metaSearchPath(M,S,T,nil,'+,100,0),getTerm(metaReduce(M,T))) == nil))
+                then nil
+                else buildInsTraceEQ(M,S,redTrace(M,S,false)) cutTrace(M,buildInsTraceRL(M,metaSearchPath(M,S,T,nil,'+,100,0),getTerm(metaReduce(M,T))),T)
+                fi
+            fi
+        fi .
+
+    op buildInsTrace : Module Term Rule Nat -> InsTrace .
+    eq buildInsTrace(M,T,R,N) = buildInsTraceEQ(M,T,redTrace(M,T,false)) buildInsStepRL'(M,{getTerm(metaReduce(M,T)),getType(metaReduce(M,T)),R},N) .
+
+    op buildInsTrace' : Module Term InsTrace -> InsTrace .
+    eq buildInsTrace'(M,T,(nil).InsTrace) = nil .
+    eq buildInsTrace'(M,T2,IT (T1 ->^{E,SB,P} T2)) = nil .
+    eq buildInsTrace'(M,T2,IT (T1 ->^{R,SB,P} T2)) = nil .
+    eq buildInsTrace'(M,T,IT (T1 ->^{E,SB,P} T2)) = createUnflatStep(T2,T) [owise] .
+    eq buildInsTrace'(M,T,IT (T1 ->^{R,SB,P} T2)) = createUnflatStep(T2,T) [owise] .
+
+    op buildInsTraceEQ : Module Term ITrace -> InsTrace .
+    eq buildInsTraceEQ(M,T,nil) = createFlatStep(T,getTerm(metaReduce(M,T))) .
+    eq buildInsTraceEQ(M,T,{(eq LAMBDA = RHO [ATS] .),SB,CO} ITR) = createCommStep(M,T,replaceHole(CO,applySub(LAMBDA,SB)),getHolePos(CO)) (replaceHole(CO,applySub(LAMBDA,SB)) ->^{(eq LAMBDA = RHO [ATS] .),SB,getHolePos(CO)} replaceHole(CO,applySub(RHO,SB))) buildInsTraceEQ(M,replaceHole(CO,applySub(RHO,SB)),ITR) .
+    eq buildInsTraceEQ(M,T,{(ceq LAMBDA = RHO if COND [ATS] .),SB,CO} ITR) = createCommStep(M,T,replaceHole(CO,applySub(LAMBDA,SB)),getHolePos(CO)) (replaceHole(CO,applySub(LAMBDA,SB)) ->^{(ceq LAMBDA = RHO if COND [ATS] .),SB,getHolePos(CO)} replaceHole(CO,applySub(RHO,SB))) buildInsTraceEQ(M,replaceHole(CO,applySub(RHO,SB)),ITR) .
+
+    op buildInsTraceRL : Module Trace Term -> InsTrace .
+    eq buildInsTraceRL(M,nil,T4) = nil .
+    eq buildInsTraceRL(M,failure,T4) = nil .
+    eq buildInsTraceRL(M,{T,TYP,R} nil,T4) = buildInsStepRL(M,{T,TYP,R},T4,0) .
+    eq buildInsTraceRL(M,{T,TYP,R} {T',TYP',R'} TR,T4) = buildInsStepRL(M,{T,TYP,R},T',0) buildInsTraceRL(M,{T',TYP',R'} TR,T4) [owise] .
+
+    op buildInsTraceRL : Module Trace -> InsTrace .
+    eq buildInsTraceRL(M,nil) = nil .
+    eq buildInsTraceRL(M,failure) = nil .
+    eq buildInsTraceRL(M,{T,TYP,R} nil) = buildInsStepRL'(M,{T,TYP,R},0) .
+    eq buildInsTraceRL(M,{T,TYP,R} {T',TYP',R'} TR) = buildInsStepRL(M,{T,TYP,R},T',0) buildInsTraceRL(M,{T',TYP',R'} TR) [owise] .
+
+    op buildInsStepRL : Module TraceStep Term Nat -> InsTrace .
+    ceq buildInsStepRL(M,{T1,TYP,(rl LAMBDA => RHO [ATS label(F)] .)},T2,N) = nil if metaXapply(M,T1,F,none,0,unbounded,N) == failure .
+    ceq buildInsStepRL(M,{T1,TYP,(crl LAMBDA => RHO if COND [ATS label(F)] .)},T2,N) = nil if metaXapply(M,T1,F,none,0,unbounded,N) == failure .
+    ceq buildInsStepRL(M,{T1,TYP,(rl LAMBDA => RHO [ATS label(F)] .)},T4,N) = createUnflatStep(T1,T2) (T2 ->^{(rl LAMBDA => RHO [ATS label(F)] .),SB,P} T3) buildInsTraceEQ(M,T3,redTrace(M,T3,false))
+        if {T4,TYP',SB,CO} := applyRule(M,T1,F,0,getTerm(metaXapply(M,T1,F,none,0,unbounded,N))) 
+        /\ P := getHolePos(CO)
+        /\ T2 := replaceHole(CO,applySub(LAMBDA,SB)) 
+        /\ T3 := replaceHole(CO,applySub(RHO,SB)) .
+    ceq buildInsStepRL(M,{T1,TYP,(crl LAMBDA => RHO if COND [ATS label(F)] .)},T4,N) = createUnflatStep(T1,T2) (T2 ->^{(crl LAMBDA => RHO if COND [ATS label(F)] .),SB,P} T3) buildInsTraceEQ(M,T3,redTrace(M,T3,false))
+        if {T4,TYP',SB,CO} := applyRule(M,T1,F,0,getTerm(metaXapply(M,T1,F,none,0,unbounded,N))) 
+        /\ P := getHolePos(CO)
+        /\ T2 := replaceHole(CO,applySub(LAMBDA,SB)) 
+        /\ T3 := replaceHole(CO,applySub(RHO,SB)) .
+    eq buildInsStepRL(M,TSTEP,T2,N) = buildInsStepRL(M,TSTEP,T2,N + 1) [owise] .
+
+    --- Specific RL-Step with number of solution as argument (direct metaXapply, no applyRule)
+    op buildInsStepRL' : Module TraceStep Nat -> InsTrace .
+    ceq buildInsStepRL'(M,{T1,TYP,(rl LAMBDA => RHO [ATS label(F)] .)},N) = createUnflatStep(T1,T2) (T2 ->^{(rl LAMBDA => RHO [ATS label(F)] .),SB,P} T3) buildInsTraceEQ(M,T3,redTrace(M,T3,false))
+        if {T4,TYP',SB,CO} := metaXapply(M,T1,F,none,0,unbounded,N) 
+        /\ P := getHolePos(CO)
+        /\ T2 := replaceHole(CO,applySub(LAMBDA,SB)) 
+        /\ T3 := replaceHole(CO,applySub(RHO,SB)) .
+    ceq buildInsStepRL'(M,{T1,TYP,(crl LAMBDA => RHO if COND [ATS label(F)] .)},N) = createUnflatStep(T1,T2) (T2 ->^{(crl LAMBDA => RHO if COND [ATS label(F)] .),SB,P} T3) buildInsTraceEQ(M,T3,redTrace(M,T3,false))
+        if {T4,TYP',SB,CO} := metaXapply(M,T1,F,none,0,unbounded,N) 
+        /\ P := getHolePos(CO)
+        /\ T2 := replaceHole(CO,applySub(LAMBDA,SB)) 
+        /\ T3 := replaceHole(CO,applySub(RHO,SB)) .
+    eq buildInsStepRL'(M,TSTEP,N) = nil [owise] .
+
+    --- Create Flat/Unflat Steps
+    op createCommStep : Module Term Term Position -> InsTrace .
+    eq createCommStep(M,T,T,P) = nil .
+    eq createCommStep(M,T1,T2,P) = 
+        if (getTerm(metaNormalize(M,T1)) == T2) 
+        then createFlatStep(T1,T2)
+        else createFlatStep(T1,getTerm(metaNormalize(M,T1))) createUnflatStep(getTerm(metaNormalize(M,T1)),T2)
+        fi [owise] .
+
+    op createFlatStep : Term Term -> InsTrace .
+    eq createFlatStep(T1,T2) = 
+        if (T1 =/= T2) 
+        then (T1 ->^{(eq T1 = T2 [label('flattening)] .),none,Lambda} T2) 
+        else nil 
+        fi .
+
+    op createUnflatStep : Term Term -> InsTrace .
+    eq createUnflatStep(T1,T2) = 
+        if (T1 =/= T2) 
+        then (T1 ->^{(eq T1 = T2 [label('unflattening)] .),none,Lambda} T2) 
+        else nil 
+        fi .
+endm
+
+mod ELP-EXPAND is
+    pr ELP-TRACE .
+
+    var M : Module .
+    var N : Nat .
+    var F : Qid .
+    vars LAMBDA RHO : Term .
+    vars TL TL' : TermList .
+    var R : Rule .
+    var RLS : RuleSet .
+    var COND : Condition .
+    var ATS : AttrSet .
+
+    op isNonExec : AttrSet -> Bool .
+    eq isNonExec(nonexec ATS) = true .
+    eq isNonExec(ATS) = false [owise] .
+
+    op expandNode : Module TermList -> ExpandResult .
+    eq expandNode(M,TL) = expandNode(M,TL,TL) .
+
+    op expandNode : Module TermList TermList -> ExpandResult .
+    eq expandNode(M,TL,TL') = 
+        if (expandNode'(M,getRls(M),TL') =/= nil) 
+        then expandNode'(M,getRls(M),TL')
+        else
+            if buildInsTraceEQ(M,TL',redTrace(M,TL',false)) =/= nil 
+            then { buildInsTraceEQ(M,TL',redTrace(M,TL',false)) }
+            else nil
+            fi
+        fi .
+
+    op expandNode' : Module RuleSet TermList -> ExpandResult .
+    eq expandNode'(M,none,TL) = nil .
+    eq expandNode'(M,R RLS,TL) = expandNode''(M,R,TL,0) expandNode'(M,RLS,TL) [owise] .
+
+    op expandNode'' : Module Rule TermList Nat -> ExpandResult .
+    eq expandNode''(M,(rl LAMBDA => RHO [ATS label(F)] .),TL,N) = 
+        if (not(isNonExec(ATS)) and-then metaXapply(M,TL,F,none,0,unbounded,N) =/= (failure).Result4Tuple?) 
+        then
+            if buildInsTrace(M,TL,(rl LAMBDA => RHO [ATS label(F)] .),N) =/= nil 
+            then { buildInsTrace(M,TL,(rl LAMBDA => RHO [ATS label(F)] .),N) } expandNode''(M,(rl LAMBDA => RHO [ATS label(F)] .),TL,N + 1)
+            else expandNode''(M,(rl LAMBDA => RHO [ATS label(F)] .),TL,N + 1)
+            fi
+        else nil
+        fi .
+    eq expandNode''(M,(crl LAMBDA => RHO if COND [ATS label(F)] .),TL,N) = 
+        if (not(isNonExec(ATS)) and-then metaXapply(M,TL,F,none,0,unbounded,N) =/= (failure).Result4Tuple?) 
+        then
+            if buildInsTrace(M,TL,(crl LAMBDA => RHO if COND [ATS label(F)] .),N) =/= nil 
+            then { buildInsTrace(M,TL,(crl LAMBDA => RHO if COND [ATS label(F)] .),N) } expandNode''(M,(crl LAMBDA => RHO if COND [ATS label(F)] .),TL,N + 1)
+            else expandNode''(M,(crl LAMBDA => RHO if COND [ATS label(F)] .),TL,N + 1)
+            fi
+        else nil
+        fi .
+endm
+
+mod ELP-TRACE-SLICING is
+    pr ELP-TRACE .
+
+    var M : Module .
+    var E : Equation .
+    var R : Rule .
+    var C : Constant .
+    vars V V' V1 V2 V3 V4 : Variable .
+    vars F F' : Qid .
+    var SO : Sort .
+    vars P P' : Position .
+    var SP : Set{Position} .
+    var ATS : AttrSet .
+    var IT : InsTrace .
+    var TS* : TraceSlice .
+    vars N NC NC' NC'' NC''' : Nat .
+    vars COND B* B*' : Condition .
+    vars SB SB' SIGMA THETA PSI PSI' : Substitution .
+    vars S S* S*' T T' T* T*' T1 T2 T3 T4 MT MT* PT PT* : Term .
+    vars TL TL' TL1 TL2 TL3 TL4 TL5 LAMBDA LAMBDA* RHO RHO* : TermList .
+    vars TLPL TLPL' TLPL1 TLPL1' : TermListPosList .
+    var TYP : Type .
+    var NETL : NeTermList .
+    
+    op isLeaf : Term -> Bool .
+    eq isLeaf(F[TL]) = 
+        if (TL == '0.Zero) 
+        then
+            if (string(F) == "s_" or-else substr(string(F),0,3) == "s_^") 
+            then true 
+            else false 
+            fi
+        else false
+        fi .
+    eq isLeaf(T) = true [owise] .
+
+    op checkId : Module Term Term -> Term .
+    eq checkId(M,F[(T,TL)],T') =  
+        if (metaIdentity(M,F[(T,TL)]) == T) 
+        then F[(T,T')]
+        else
+            if (metaIdentity(M,F[(T,TL)]) == TL) 
+            then F[(T',TL)] 
+            else T'
+            fi
+        fi .
+    eq checkId(M,T,T') = T' [owise] .
+
+    op filterId : Term TermListPosList TermListPosList Nat -> TermListNat .
+    eq filterId(T1,(TLPL [ T2 : P ] TLPL1),(TLPL' [ T2 : P' ] TLPL1'),NC) = filterId(T1,(TLPL TLPL1),(TLPL' TLPL1'),NC) .
+    eq filterId(T1,TLPL,TLPL',NC) = filterId'(T1,TLPL,NC) [owise] .
+
+    op filterId' : Term TermListPosList Nat -> TermListNat .
+    eq filterId'(T,(TLPL [ C : P ] TLPL'),NC) = filterId'(replaceSubTerm(T,P,bullet(getType(C),NC)),(TLPL TLPL'),(NC + 1)) .
+    eq filterId'(T,TLPL,NC) = [ T | NC ] [owise] .
+
+    op sliceFlatStep : Module Term Term Term Nat -> TermListNat .
+    eq sliceFlatStep(M,T1,T2,T3,NC) = sliceFlatStep0(M,getTerm(filterId(T1,getChildrenPos(T1),getChildrenPos(T2),NC)),T2,T3,getNC(filterId(T1,getChildrenPos(T1),getChildrenPos(T2),NC))) .
+
+    op sliceFlatStep0 : Module Term Term Term Nat -> TermListNat .
+    eq sliceFlatStep0(M,T1,T2,T3,NC) = 
+        if (isBullet(T3)) 
+        then [ checkId(M,T1,T3) | NC ] 
+        else sliceFlatStep1(M,T1,T2,T3,NC)
+        fi .
+    eq sliceFlatStep0(M,T1,T2,T3,NC) = sliceFlatStep1(M,T1,T2,T3,NC) [owise] .
+
+    op sliceFlatStep1 : Module Term Term Term Nat -> TermListNat .
+    eq sliceFlatStep1(M,T1,T2,T3,NC) = 
+        if (isLeaf(T2))
+        then [ T1 | NC ]
+        else sliceFlatStep2(M,T1,T2,T3,NC)
+        fi .
+    eq sliceFlatStep1(M,T1,T2,T3,NC) = sliceFlatStep2(M,T1,T2,T3,NC) [owise] .
+
+    op sliceFlatStep2 : Module Term Term Term Nat -> TermListNat .
+    eq sliceFlatStep2(M,F[TL1],F[TL2],F[TL3],NC) = sliceFlatStep4(M,F[TL1],F[TL2],F[TL3],NC) .
+    eq sliceFlatStep2(M,T1,T2,T3,NC) = sliceFlatStep3(M,T1,T2,T3,NC) [owise] .
+
+    op sliceFlatStep3 : Module Term Term Term Nat -> TermListNat .
+    eq sliceFlatStep3(M,F[(T1,F'[TL1])],F'[TL2],F'[TL3],NC) = [ F[(T1,getTerm(sliceFlatStep4(M,F'[TL1],F'[TL2],F'[TL3],NC)))] | getNC(sliceFlatStep4(M,F'[TL1],F'[TL2],F'[TL3],NC)) ] .
+    eq sliceFlatStep3(M,F[(F'[TL1],T1)],F'[TL2],F'[TL3],NC) = [ F[(getTerm(sliceFlatStep4(M,F'[TL1],F'[TL2],F'[TL3],NC)),T1)] | getNC(sliceFlatStep4(M,F'[TL1],F'[TL2],F'[TL3],NC)) ] [owise] .
+
+    op sliceFlatStep4 : Module Term Term Term Nat -> TermListNat .
+    eq sliceFlatStep4(M,F[TL1],F[TL2],F[TL3],NC) = 
+        if metaAssociative(M,F[TL1]) 
+        then replaceChildrenFS(M,F[TL1],TL2,TL3,getChildrenPos(F[TL1]),NC)
+        else [ F[getTerm(sliceFlatStep5(M,TL1,TL2,TL3,NC))] | getNC(sliceFlatStep5(M,TL1,TL2,TL3,NC)) ]
+        fi .
+
+    op sliceFlatStep5 : Module TermList TermList TermList Nat -> TermListNat .
+    eq sliceFlatStep5(M,empty,empty,empty,NC) = [ empty | NC ] .
+    eq sliceFlatStep5(M,(T1,TL1),(T2,TL2),(T3,TL3),NC) = [ (getTerm(sliceFlatStep(M,T1,T2,T3,NC)),getTerm(sliceFlatStep5(M,TL1,TL2,TL3,getNC(sliceFlatStep(M,T1,T2,T3,NC))))) | getNC(sliceFlatStep5(M,TL1,TL2,TL3,getNC(sliceFlatStep(M,T1,T2,T3,NC)))) ] [owise] .
+
+    op replaceChildrenFS : Module Term TermList TermList TermListPosList Nat -> TermListNat .
+    ceq replaceChildrenFS(M,T1,(T2,TL2),(T3,TL3),TLPL ([ T : P ] TLPL'),NC) = 
+        if (isBullet(T3)) 
+        then replaceChildrenFS(M,replaceSubTerm(T1,P,T3),(TL2),(TL3),TLPL TLPL',NC) 
+        else replaceChildrenFS(M,replaceSubTerm(T1,P,getTerm(sliceFlatStep(M,getSubTerm(T1,P),T2,T3,NC))),TL2,TL3,TLPL TLPL',getNC(sliceFlatStep(M,getSubTerm(T1,P),T2,T3,NC))) 
+        fi 
+        if {T2,TYP} := metaNormalize(M,T) .
+    eq replaceChildrenFS(M,T1,(T2,TL2),(T3,TL3),TLPL ([ T2 : P ] TLPL'),NC) = 
+        if (isBullet(T3)) 
+        then replaceChildrenFS(M,replaceSubTerm(T1,P,T3),(TL2),(TL3),TLPL TLPL',NC) 
+        else replaceChildrenFS(M,T1,TL2,TL3,TLPL TLPL',NC)
+        fi [owise] .
+    eq replaceChildrenFS(M,T1,TL2,TL2,TLPL,NC) = [ T1 | NC ] [owise] .
+
+    op sliceUnflatStep : Module TermList TermList TermList Nat -> TermListNat .
+    eq sliceUnflatStep(M,TL1,TL2,T3,NC) =  
+        if (isBullet(T3))
+        then [ T3 | NC ]
+        else sliceUnflatStep1(M,TL1,TL2,T3,NC)
+        fi .
+    eq sliceUnflatStep(M,F'[TL2],F[(T1,F'[TL4])],F[(T2,T4)],NC) =  
+        if (F =/= F')
+        then sliceUnflatStep(M,F'[TL2],F'[TL4],T4,NC)
+        else sliceUnflatStep1(M,F'[TL2],F[(T1,F'[TL4])],F[(T2,T4)],NC)
+        fi .
+    eq sliceUnflatStep(M,TL1,TL2,TL3,NC) = sliceUnflatStep1(M,TL1,TL2,TL3,NC) [owise] .
+
+    op sliceUnflatStep1 : Module TermList TermList TermList Nat -> TermListNat .
+    eq sliceUnflatStep1(M,F'[TL2],F[(F'[TL4],T1)],F[T4,T2],NC) = 
+        if (F =/= F')
+        then sliceUnflatStep(M,F'[TL2],F'[TL4],T4,NC) 
+        else sliceUnflatStep2(M,F'[TL2],F[(F'[TL4],T1)],F[T4,T2],NC)
+        fi .
+    eq sliceUnflatStep1(M,TL1,TL2,TL3,NC) = sliceUnflatStep2(M,TL1,TL2,TL3,NC) [owise] .
+
+    op sliceUnflatStep2 : Module TermList TermList TermList Nat -> TermListNat .
+    eq sliceUnflatStep2(M,T3,F[(T1,T3)],F[(T2,T4)],NC) = 
+        if (isLeaf(T3))
+        then [ T4 | NC ]
+        else sliceUnflatStep3(M,T3,F[(T1,T3)],F[(T2,T4)],NC)
+        fi .
+    eq sliceUnflatStep2(M,TL1,TL2,TL3,NC) = sliceUnflatStep3(M,TL1,TL2,TL3,NC) [owise] .
+
+    op sliceUnflatStep3 : Module TermList TermList TermList Nat -> TermListNat .
+    eq sliceUnflatStep3(M,T3,F[(T3,T1)],F[(T4,T2)],NC) =
+        if (isLeaf(T3))
+        then [ T2 | NC ]
+        else sliceUnflatStep4(M,T3,F[(T3,T1)],F[(T4,T2)],NC)
+        fi .
+    eq sliceUnflatStep3(M,TL1,TL2,TL3,NC) = sliceUnflatStep4(M,TL1,TL2,TL3,NC) [owise] .
+
+    op sliceUnflatStep4 : Module TermList TermList TermList Nat -> TermListNat .
+    eq sliceUnflatStep4(M,TL1,TL2,TL3,NC) = 
+        if isLeaf(TL1)
+        then [ TL1 | NC ] 
+        else sliceUnflatStep5(M,TL1,TL2,TL3,NC)
+        fi .
+    eq sliceUnflatStep4(M,TL1,TL2,TL3,NC) = sliceUnflatStep5(M,TL1,TL2,TL3,NC) [owise] .
+
+    op sliceUnflatStep5 : Module TermList TermList TermList Nat -> TermListNat .
+    eq sliceUnflatStep5(M,F'[TL2],F[(T1,F'[TL4])],F[(T2,T4)],NC) =
+        if ((T1 == metaIdentity(M,F'[TL2])) or-else ((F =/= F') and-then not(isLeaf(F'[TL2]))))
+        then  sliceUnflatStep(M,F'[TL2],F'[TL4],T4,NC) 
+        else sliceUnflatStep6(M,F'[TL2],F[(T1,F'[TL4])],F[(T2,T4)],NC)
+        fi .
+    eq sliceUnflatStep5(M,TL1,TL2,TL3,NC) = sliceUnflatStep6(M,TL1,TL2,TL3,NC) [owise] .
+
+    op sliceUnflatStep6 : Module TermList TermList TermList Nat -> TermListNat .
+    eq sliceUnflatStep6(M,F'[TL2],F[(F'[TL4],T1)],F[T4,T2],NC) = 
+        if ((T1 == metaIdentity(M,F'[TL2])) or-else ((F =/= F') and-then not(isLeaf(F'[TL2]))))
+        then sliceUnflatStep(M,F'[TL2],F'[TL4],T4,NC) 
+        else sliceUnflatStep7(M,F'[TL2],F[(F'[TL4],T1)],F[T4,T2],NC)
+        fi .
+    eq sliceUnflatStep6(M,F[TL1],F[TL2],F[TL3],NC) = sliceUnflatStep7(M,F[TL1],F[TL2],F[TL3],NC) [owise] .
+
+    op sliceUnflatStep7 : Module TermList TermList TermList Nat -> TermListNat .
+    eq sliceUnflatStep7(M,F[TL1],F[TL2],F[TL3],NC) =
+        if metaAssociative(M,F[TL1]) 
+        then [F[getTerm(replaceChildrenUFS(M,TL1,F[TL3],getChildrenPos(F[TL2]),NC))] | getNC(replaceChildrenUFS(M,TL1,F[TL3],getChildrenPos(F[TL2]),NC))]
+        else [F[getTerm(sliceUnflatStep8(M,TL1,TL2,TL3,NC))] | getNC(sliceUnflatStep8(M,TL1,TL2,TL3,NC))]
+        fi .
+
+    op sliceUnflatStep8 : Module TermList TermList TermList Nat -> TermListNat .
+    eq sliceUnflatStep8(M,empty,empty,empty,NC) = [ empty | NC ] .
+    eq sliceUnflatStep8(M,F[TL1],TL2,empty,NC) = [ bullet(getType(metaNormalize(M,F[TL1])),NC) | NC + 1 ] .
+    ceq sliceUnflatStep8(M,(T1,TL1),(T2,TL2),(T3,TL3),NC) = [ (TL,TL4) | NC'' ]
+        if [TL | NC'] := sliceUnflatStep(M,T1,T2,T3,NC) 
+        /\ [TL4 | NC''] := sliceUnflatStep8(M,TL1,TL2,TL3,NC') [owise] .
+
+    op replaceChildrenUFS : Module TermList TermList TermListPosList Nat -> TermListNat .
+    ceq replaceChildrenUFS(M,(F[TL4],TL2),TL3,(TLPL [ F[TL4] : P . N ] TLPL'),NC) = [(TL5,TL) | NC']
+        if TL5 := getSubTerm(TL3,P . N)
+        /\ (isBullet(TL5) or-else (TL5 =/= (empty).GroundTermList))
+        /\ [TL | NC'] := replaceChildrenUFS(M,TL2,TL3,TLPL TLPL',NC) .
+    eq replaceChildrenUFS(M,TL2,TL3,TLPL,NC) = replaceChildrenUFS1(M,TL2,TL3,TLPL,NC) [owise] .
+
+    op replaceChildrenUFS1 : Module TermList TermList TermListPosList Nat -> TermListNat .
+    ceq replaceChildrenUFS1(M,(F[TL4],TL2),TL3,(TLPL [ F[TL4] : P . N ] TLPL'),NC) = [(bullet(TYP,NC'),TL) | NC' + 1]
+        if TL5 := getSubTerm(TL3,P . N)
+        /\ (TL5 == (empty).GroundTermList)
+        /\ {T1,TYP} := metaNormalize(M,F[TL4])
+        /\ [TL | NC'] := replaceChildrenUFS(M,TL2,TL3,TLPL TLPL',NC) .
+    eq replaceChildrenUFS1(M,TL2,TL3,TLPL,NC) = replaceChildrenUFS2(M,TL2,TL3,TLPL,NC) [owise] .
+
+    op replaceChildrenUFS2 : Module TermList TermList TermListPosList Nat -> TermListNat .
+    ceq replaceChildrenUFS2(M,(F[TL4],TL2),TL3,(TLPL [ F[TL'] : P . N ] TLPL'),NC) = [(TL,TL1) | NC'']
+        if TL5 := getSubTerm(TL3,P . N)
+        /\ TL5 =/= empty
+        /\ not(isBullet(TL5))
+        /\ [TL | NC'] := sliceUnflatStep8(M,F[TL4],F[TL'],TL5,NC) 
+        /\ [TL1 | NC''] := replaceChildrenUFS(M,TL2,TL3,TLPL TLPL',NC') .
+    eq replaceChildrenUFS2(M,TL2,TL3,TLPL,NC) = replaceChildrenUFS3(M,TL2,TL3,TLPL,NC) [owise] .
+
+    op replaceChildrenUFS3 : Module TermList TermList TermListPosList Nat -> TermListNat .    
+    ceq replaceChildrenUFS3(M,(T1,TL2),TL3,(TLPL [ T2 : P . N ] TLPL'),NC) = 
+        (if (TL5 == (empty).EmptyCommaList) then [(bullet(TYP,NC'),TL) | NC' + 1]
+        else 
+            if (isBullet(TL5)) 
+            then [(TL5,TL) | NC']
+            else [(T1,TL) | NC'] 
+            fi
+        fi)
+        if TL5 := getSubTerm(TL3,P . N) 
+        /\ {T1,TYP} := metaNormalize(M,T2) 
+        /\ [TL | NC'] := replaceChildrenUFS(M,TL2,TL3,TLPL TLPL',NC) .
+    eq replaceChildrenUFS3(M,empty,TL3,TLPL,NC) = [empty | NC] [owise] . 
+
+    op slice : Module Term Term Position Nat -> TermListNat .
+    eq slice(M,(empty).TermList,T,P,NC) = [ (empty).TermList | NC ] .
+    eq slice(M,T,(empty).TermList,P,NC) = [ (empty).TermList | NC ] .
+    eq slice(M,V,T,P,NC) = if (isVariable(T)) then [ bullet(getType(V),NC) | (NC + 1) ] else [ V | NC ] fi .
+    eq slice(M,C,V,P,NC) = [ bullet(getType(C),NC) | (NC + 1) ] .
+    eq slice(M,C,C,P,NC) = [ C | NC ] .
+    eq slice(M,F[TL],V,P,NC) = [ bullet(getType(metaNormalize(M,F[TL])),NC) | (NC + 1) ] .
+    eq slice(M,F[TL],F[TL'],P,NC) = [ F[getTerm(slice(M,TL,TL',P . 1,NC))] | getNC(slice(M,TL,TL',P . 1,NC)) ] .
+    eq slice(M,(T,TL),V,(P . N),NC) = [ bullet(getType(metaNormalize(M,(T,TL))),NC) | (NC + 1) ] .
+    ceq slice(M,(T,TL),(T',TL'),(P . N),NC) = [ getTerm(slice(M,T,T',(P . N),NC)),getTerm(slice(M,TL,TL',(P . (N + 1)),getNC(slice(M,T,T',(P . N),NC)))) | getNC(slice(M,TL,TL',(P . (N + 1)),getNC(slice(M,T,T',(P . N),NC)))) ] 
+        if not(isVariable(T')) [owise] .
+
+    op invSlice : Module Term Position Position Nat -> TermListNat .
+    --- P/Current pos
+    --- SP/Set of irrelevant pos
+    eq invSlice(M,empty,P,SP,NC) = [ empty | NC ] .
+    eq invSlice(M,V,P,SP,NC) = 
+        if not(P in SP) 
+        then [ V | NC ] 
+        else [ bullet(getType(V),NC) | NC + 1 ] 
+        fi .
+    eq invSlice(M,C,P,SP,NC) = 
+        if not(P in SP) 
+        then [ C | NC ] 
+        else [ bullet(getType(C),NC) | NC + 1 ] 
+        fi .
+    eq invSlice(M,F[TL],P,SP,NC) = 
+        if not(P in SP) 
+        then [ F[getTerm(invSlice(M,TL,P . 1,SP,NC))] | getNC(invSlice(M,TL,P . 1,SP,NC)) ] 
+        else [ bullet(getType(metaNormalize(M,F[TL])),NC) | NC + 1 ] 
+        fi .
+    eq invSlice(M,(T,TL),P . N,SP,NC) = [ (getTerm(invSlice(M,T,P . N,SP,NC)),getTerm(invSlice(M,TL,P . (N + 1),SP,getNC(invSlice(M,T,P . N,SP,NC))))) | getNC(invSlice(M,TL,P . (N + 1),SP,getNC(invSlice(M,T,P . N,SP,NC)))) ] [owise] .
+
+    op slice : Module Term Position Position Nat -> TermListNat .
+    --- P/Current pos
+    --- SP/Set of relevant pos
+    eq slice(M,empty,P,SP,NC) = [ empty | NC ] .
+    eq slice(M,V,P,SP,NC) =
+        if not(P in SP) 
+        then [ bullet(getType(V),NC) | (NC + 1) ]
+        else [ V | NC ]
+        fi .
+    eq slice(M,C,P,SP,NC) = 
+        if not(P in SP) 
+        then [ bullet(getType(C),NC) | (NC + 1) ]
+        else [ C | NC ]
+        fi .
+    eq slice(M,F[TL],P,SP,NC) = 
+        if not(P in SP) 
+        then [ bullet(getType(metaNormalize(M,F[TL])),NC) | NC + 1 ]
+        else [ F[getTerm(slice(M,TL,P . 1,SP,NC))] | getNC(slice(M,TL,P . 1,SP,NC)) ]
+        fi .
+    eq slice(M,(T,TL),(P . N),SP,NC) = [ getTerm(slice(M,T,(P . N),SP,NC)),getTerm(slice(M,TL,(P . (N + 1)),SP,getNC(slice(M,T,(P . N),SP,NC)))) | getNC(slice(M,TL,(P . (N + 1)),SP,getNC(slice(M,T,(P . N),SP,NC)))) ] [owise] .
+
+    op slice : Module Term Term Position Substitution Nat -> TermSubNat .
+    eq slice(M,(empty).TermList,T,P,SB,NC) = [ (empty).TermList | SB | NC ] .
+    eq slice(M,T,(empty).TermList,P,SB,NC) = [ (empty).TermList | SB | NC ] .
+    eq slice(M,V,T,P,SB,NC) = if (isVariable(T)) then [ bullet(getType(V),NC) | ((bullet(getType(V),NC) <- V) ; SB) | (NC + 1) ] else [ V | SB | NC ] fi .
+    eq slice(M,C,V,P,SB,NC) = [ bullet(getType(C),NC) | ((bullet(getType(C),NC) <- C) ; SB) | (NC + 1) ] .
+    eq slice(M,C,C,P,SB,NC) = [ C | SB | NC ] .
+    eq slice(M,F[TL],V,P,SB,NC) = [ bullet(getType(metaNormalize(M,F[TL])),NC) | ((bullet(getType(metaNormalize(M,F[TL])),NC) <- F[TL]) ; SB)  | (NC + 1) ] .
+    eq slice(M,F[TL],F[TL'],P,SB,NC) = [ F[getTerm(slice(M,TL,TL',P . 1,SB,NC))] | getSub(slice(M,TL,TL',P . 1,SB,NC)) | getNC(slice(M,TL,TL',P . 1,SB,NC)) ] .
+    eq slice(M,(T,TL),V,(P . N),SB,NC) = [ bullet(getType(metaNormalize(M,(T,TL))),NC) | ((bullet(getType(metaNormalize(M,(T,TL))),NC) <- (T,TL)) ; SB) | (NC + 1) ] [owise] .
+    ceq slice(M,(T,TL),(T',TL'),(P . N),SB,NC) = [ getTerm(slice(M,T,T',(P . N),SB,NC)),getTerm(slice(M,TL,TL',(P . (N + 1)),getSub(slice(M,T,T',(P . N),SB,NC)),getNC(slice(M,T,T',(P . N),SB,NC)))) | getSub(slice(M,TL,TL',(P . (N + 1)),getSub(slice(M,T,T',(P . N),SB,NC)),getNC(slice(M,T,T',(P . N),SB,NC)))) | getNC(slice(M,TL,TL',(P . (N + 1)),getSub(slice(M,T,T',(P . N),SB,NC)),getNC(slice(M,T,T',(P . N),SB,NC)))) ] 
+        if not(isVariable(T')) [owise] .
+
+    op slice : Module Term Position Position Substitution Nat -> TermSubNat .
+    eq slice(M,empty,P,SP,SB,NC) = [ empty | SB | NC ] .
+    eq slice(M,V,P,SP,SB,NC) =
+        if not(P in SP) 
+        then [ bullet(getType(V),NC) | ((bullet(getType(V),NC) <- V) ; SB) | (NC + 1) ]
+        else [ V | SB | NC ]
+        fi .
+    eq slice(M,C,P,SP,SB,NC) = 
+        if not(P in SP) 
+        then [ bullet(getType(C),NC) | ((bullet(getType(C),NC) <- C) ; SB) | (NC + 1) ]
+        else [ C | SB | NC ]
+        fi .
+    eq slice(M,F[TL],P,SP,SB,NC) = 
+        if not(P in SP) 
+        then [ bullet(getType(metaNormalize(M,F[TL])),NC) | ((bullet(getType(metaNormalize(M,F[TL])),NC) <- F[TL]) ; SB) | (NC + 1) ]
+        else [ F[getTerm(slice(M,TL,P . 1,SP,SB,NC))] | getSub(slice(M,TL,P . 1,SP,SB,NC)) | getNC(slice(M,TL,P . 1,SP,SB,NC)) ]
+        fi .
+    eq slice(M,(T,TL),(P . N),SP,SB,NC) = [ getTerm(slice(M,T,(P . N),SP,SB,NC)),getTerm(slice(M,TL,(P . (N + 1)),SP,getSub(slice(M,T,(P . N),SP,SB,NC)),getNC(slice(M,T,(P . N),SP,SB,NC)))) | getSub(slice(M,TL,(P . (N + 1)),SP,getSub(slice(M,T,(P . N),SP,SB,NC)),getNC(slice(M,T,(P . N),SP,SB,NC)))) | getNC(slice(M,TL,(P . (N + 1)),SP,getSub(slice(M,T,(P . N),SP,SB,NC)),getNC(slice(M,T,(P . N),SP,SB,NC)))) ] [owise] .
+
+    op refineObject : Module Term Nat -> TermListNat .
+    eq refineObject(M,T,NC) = refineObject'(M,getTerm(refineAttributes(M,T,NC)),getNC(refineAttributes(M,T,NC))) .
+
+    op refineAttributes : Module Term Nat -> TermListNat .
+    eq refineAttributes(M,empty,NC) = [ empty | NC ] .
+    eq refineAttributes(M,V,NC) = [ V | NC ] .
+    eq refineAttributes(M,C,NC) = if (C == 'none.AttributeSet) then [ bullet('Attribute,NC) | (NC + 1) ] else [ C | NC ] fi .
+    eq refineAttributes(M,F[TL],NC) = 
+        if ((getType(metaNormalize(M,F[TL])) == 'Attribute) and-then (isBullet(TL)))
+        then [ bullet('Attribute,NC) | (NC + 1) ]
+        else [ F[getTerm(refineAttributes(M,TL,NC))] | getNC(refineAttributes(M,TL,NC)) ]
+        fi .
+    eq refineAttributes(M,(T,TL),NC) = [ (getTerm(refineAttributes(M,T,NC)),getTerm(refineAttributes(M,TL,getNC(refineAttributes(M,T,NC))))) | getNC(refineAttributes(M,TL,getNC(refineAttributes(M,T,NC)))) ] [owise] .
+
+    op refineObject' : Module Term Nat -> TermListNat .
+    eq refineObject'(M,empty,NC) = [ empty | NC ] .
+    eq refineObject'(M,V,NC) = [ V | NC ] .
+    eq refineObject'(M,C,NC) = [ C | NC ] .
+    eq refineObject'(M,F[TL],NC) = 
+        if ((getType(metaNormalize(M,F[TL])) == 'Object) and-then isEmptyObjConf(F[TL]))
+        then [ bullet(getType(metaNormalize(M,F[TL])),NC) | (NC + 1) ]
+        else 
+            if (((getType(metaNormalize(M,F[TL])) == 'Configuration) or-else (getType(metaNormalize(M,F[TL])) == '`[Configuration`])) and-then isEmptyObjConf(F[TL]))
+            then [ bullet(getType(metaNormalize(M,F[TL])),NC) | (NC + 1) ]
+            else [ F[getTerm(refineObject'(M,TL,NC))] | getNC(refineObject'(M,TL,NC)) ]
+            fi
+        fi .
+    eq refineObject'(M,(T,TL),NC) = [ (getTerm(refineObject'(M,T,NC)),getTerm(refineObject'(M,TL,getNC(refineObject'(M,T,NC))))) | getNC(refineObject'(M,TL,getNC(refineObject'(M,T,NC)))) ] [owise] .
+
+    op isEmptyObjConf : TermList -> Bool .
+    eq isEmptyObjConf(empty) = true .
+    eq isEmptyObjConf('<_:_|_>[T,T','_`,_[TL]]) = 
+        if (isBullet(T) and-then isBullet(T') and-then noRelevantAtts(TL))
+        then true
+        else false
+        fi .
+    eq isEmptyObjConf('__[T,TL]) = isEmptyObjConf(T) and-then isEmptyObjConf(TL) .
+    eq isEmptyObjConf((T,TL)) = isBullet(T) and-then isEmptyObjConf(TL) [owise] .
+
+    op noRelevantAtts : TermList -> Bool .
+    eq noRelevantAtts(empty) = true .
+    eq noRelevantAtts((T,TL)) = isBullet(T) and-then noRelevantAtts(TL) [owise] .
+
+    op `[_|_|_`] : Module SlicingConf Nat -> ModuleSlicingConfNat .
+    ceq [ M | fwd< (S ->^{E,SIGMA,P} T) IT,TS*,S*,B* > | NC ] = [ M | fwd< IT,TS* (S* ->{getLabel(E),cleanBullets(SB)} T*),T*,B*' > | NC' ]
+        if [ T* | SB | B*' | NC' ] := fwdSliceStep(M,(S ->^{E,SIGMA,P} T),S*,B*,NC) .
+    ceq [ M | fwd< (S ->^{R,SIGMA,P} T) IT,TS*,S*,B* > | NC ] = [ M | fwd< IT,TS* (S* ->{getLabel(R),cleanBullets(SB)} T*),T*,B*' > | NC' ]
+        if [ T* | SB | B*' | NC' ] := fwdSliceStep(M,(S ->^{R,SIGMA,P} T),S*,B*,NC) .
+    ceq [ M | bck< IT (S ->^{E,SIGMA,P} T),TS*,T*,B* > | NC ] = [ M | bck< IT,(S* ->{getLabel(E),cleanBullets(SB)} T*) TS*,S*,B*' > | NC' ]
+        if [ S* | SB | B*' | NC' ] := bckSliceStep(M,(S ->^{E,SIGMA,P} T),T*,B*,NC) .
+    ceq [ M | bck< IT (S ->^{R,SIGMA,P} T),TS*,T*,B* > | NC ] = [ M | bck< IT,(S* ->{getLabel(R),cleanBullets(SB)} T*) TS*,S*,B*' > | NC' ]
+        if [ S* | SB | B*' | NC' ] := bckSliceStep(M,(S ->^{R,SIGMA,P} T),T*,B*,NC) .
+
+    op fwdSlicing : Module InsTrace TermList Condition Nat -> OutputTriple .
+    eq fwdSlicing(M,nil,S*,B*,NC) = (nil,B*,NC) .
+    ceq fwdSlicing(M,((S ->^{E,SIGMA,P} T) IT),S*,B*,NC) = (TS*,B*',NC') if [ M | fwd< nil,TS*,S*',B*' > | NC' ] := [ M | fwd< (S ->^{E,SIGMA,P} T) IT,nil,S*,B* > | NC ] .
+    ceq fwdSlicing(M,((S ->^{R,SIGMA,P} T) IT),S*,B*,NC) = (TS*,B*',NC') if [ M | fwd< nil,TS*,S*',B*' > | NC' ] := [ M | fwd< (S ->^{R,SIGMA,P} T) IT,nil,S*,B* > | NC ] .
+
+    op bckSlicing : Module InsTrace TermList Condition Nat -> OutputTriple .
+    eq bckSlicing(M,nil,T*,B*,NC) = (nil,B*,NC) .
+    ceq bckSlicing(M,(IT (S ->^{E,SIGMA,P} T)),T*,B*,NC) = (TS*,B*',NC') if [ M | bck< nil,TS*,T*',B*' > | NC' ] := [ M | bck< IT (S ->^{E,SIGMA,P} T),nil,T*,B* > | NC ] .
+    ceq bckSlicing(M,(IT (S ->^{R,SIGMA,P} T)),T*,B*,NC) = (TS*,B*',NC') if [ M | bck< nil,TS*,T*',B*' > | NC' ] := [ M | bck< IT (S ->^{R,SIGMA,P} T),nil,T*,B* > | NC ] . 
+
+    op fwdSliceStep : Module InsTraceStep TermList Condition Nat -> TermSubCondNat .
+    ceq fwdSliceStep(M,S ->^{(eq LAMBDA = RHO [ATS label('flattening)] .),SIGMA,P} T,S*,B*,NC) = [ T* | (none).Substitution | B* | NC' ]
+        if [ T* | NC' ] := refineObject(M,getTerm(sliceUnflatStep(M,T,S,S*,NC)),getNC(sliceUnflatStep(M,T,S,S*,NC))) .
+    ceq fwdSliceStep(M,S ->^{(eq LAMBDA = RHO [ATS label('unflattening)] .),SIGMA,P} T,S*,B*,NC) = [ T* | (none).Substitution | B* | NC' ]
+        if [ T* | NC' ] := refineObject(M,getTerm(sliceFlatStep(M,T,S,S*,NC)),getNC(sliceFlatStep(M,T,S,S*,NC))) .
+
+    ceq fwdSliceStep(M,S ->^{(eq LAMBDA = RHO [ATS label(F)] .),SIGMA,P} T,S*,B*,NC) = [ T* | (none).Substitution | B* | NC' ] 
+        if not(isRelevant(getSubTerm(S*,P))) 
+        /\ [ T* | NC' ] := refineObject(M,replaceSubTerm(S*,getBulletPos(S*,P),bullet(getType(getSubTerm(S*,getBulletPos(S*,P))),NC)),(NC + 1)) [owise] .
+    ceq fwdSliceStep(M,S ->^{(rl LAMBDA => RHO [ATS label(F)] .),SIGMA,P} T,S*,B*,NC) = [ T* | (none).Substitution | B* | NC' ] 
+        if not(isRelevant(getSubTerm(S*,P)))
+        /\ [ T* | NC' ] := refineObject(M,replaceSubTerm(S*,getBulletPos(S*,P),bullet(getType(getSubTerm(S*,getBulletPos(S*,P))),NC)),(NC + 1)) [owise] .
+    ceq fwdSliceStep(M,S ->^{(ceq LAMBDA = RHO if COND [ATS label(F)] .),SIGMA,P} T,S*,B*,NC) = [ T* | (none).Substitution | B* | NC' ]
+        if not(isRelevant(getSubTerm(S*,P)))
+        /\ [ T* | NC' ] := refineObject(M,replaceSubTerm(S*,getBulletPos(S*,P),bullet(getType(getSubTerm(S*,getBulletPos(S*,P))),NC)),(NC + 1)) [owise] .
+    ceq fwdSliceStep(M,S ->^{(crl LAMBDA => RHO if COND [ATS label(F)] .),SIGMA,P} T,S*,B*,NC) = [ T* | (none).Substitution | B* | NC' ] 
+        if not(isRelevant(getSubTerm(S*,P)))
+        /\ [ T* | NC' ] := refineObject(M,replaceSubTerm(S*,getBulletPos(S*,P),bullet(getType(getSubTerm(S*,getBulletPos(S*,P))),NC)),(NC + 1)) [owise] .
+
+    ceq fwdSliceStep(M,S ->^{(eq LAMBDA = RHO [ATS label(F)] .),SIGMA,P} T,S*,B*,NC) = [ T* | PSI | B* | NC'' ]
+        if (isRelevant(getSubTerm(S*,P)))
+        /\ [ THETA | NC' ] := buildInitialSub(M,SIGMA,NC)
+        /\ PSI := composition(THETA,mgu(applySub(LAMBDA,THETA),getSubTerm(S*,P)))
+        /\ [ T* | NC'' ] := refineObject(M,replaceSubTerm(S*,P,applySub(RHO,PSI)),NC') [owise] .
+
+    ceq fwdSliceStep(M,S ->^{(rl LAMBDA => RHO [ATS label(F)] .),SIGMA,P} T,S*,B*,NC) = [ T* | PSI | B* | NC'' ]
+        if (isRelevant(getSubTerm(S*,P)))
+        /\ [ THETA | NC' ] := buildInitialSub(M,SIGMA,NC)
+        /\ PSI := composition(THETA,mgu(applySub(LAMBDA,THETA),getSubTerm(S*,P)))
+        /\ [ T* | NC'' ] := refineObject(M,replaceSubTerm(S*,P,applySub(RHO,PSI)),NC') [owise] .
+
+    ceq fwdSliceStep(M,S ->^{(ceq LAMBDA = RHO if COND [ATS label(F)] .),SIGMA,P} T,S*,B*,NC) = [ T* | PSI' | B*' | NC''' ]
+        if (isRelevant(getSubTerm(S*,P)))
+        /\ [ THETA | NC' ] := buildInitialSub(M,SIGMA,NC)
+        /\ PSI := composition(THETA,mgu(applySub(LAMBDA,THETA),getSubTerm(S*,P)))
+        /\ [ PSI' | B*' | NC'' ] := fwdProcessCondition(M,COND,SIGMA,PSI,B*,NC')
+        /\ [ T* | NC'''] := refineObject(M,replaceSubTerm(S*,P,applySub(RHO,PSI')),NC'') [owise] .
+
+    ceq fwdSliceStep(M,S ->^{(crl LAMBDA => RHO if COND [ATS label(F)] .),SIGMA,P} T,S*,B*,NC) = [ T* | PSI' | B*' | NC''' ]
+        if (isRelevant(getSubTerm(S*,P)))
+        /\ [ THETA | NC' ] := buildInitialSub(M,SIGMA,NC)
+        /\ PSI := composition(THETA,mgu(applySub(LAMBDA,THETA),getSubTerm(S*,P)))
+        /\ [ PSI' | B*' | NC'' ] := fwdProcessCondition(M,COND,SIGMA,PSI,B*,NC')
+        /\ [ T* | NC'''] := refineObject(M,replaceSubTerm(S*,P,applySub(RHO,PSI')),NC'') [owise] .
+
+    op bckSliceStep : Module InsTraceStep TermList Condition Nat -> TermSubCondNat .
+    ceq bckSliceStep(M,S ->^{(eq LAMBDA = RHO [ATS label('flattening)] .),SIGMA,P} T,T*,B*,NC) = [ S* | (none).Substitution | B* | NC' ]
+        if [ S* | NC' ] := refineObject(M,getTerm(sliceFlatStep(M,S,T,T*,NC)),getNC(sliceFlatStep(M,S,T,T*,NC))) .
+    ceq bckSliceStep(M,S ->^{(eq LAMBDA = RHO [ATS label('unflattening)] .),SIGMA,P} T,T*,B*,NC) = [ S* | (none).Substitution | B* | NC' ]
+        if [ S* | NC' ] := refineObject(M,getTerm(sliceUnflatStep(M,S,T,T*,NC)),getNC(sliceUnflatStep(M,S,T,T*,NC))) .
+
+    ceq bckSliceStep(M,S ->^{(eq LAMBDA = RHO [ATS label(F)] .),SIGMA,P} T,T*,B*,NC) = [ S* | (none).Substitution | B* | NC' ]
+        if (P =/= Lambda and-then not(isRelevant(getSubTerm(T*,P))))
+        /\ [ S* | NC' ] := refineObject(M,replaceSubTerm(T*,getBulletPos(T*,P),bullet(getType(getSubTerm(T*,getBulletPos(T*,P))),NC)),(NC + 1)) [owise] .
+    ceq bckSliceStep(M,S ->^{(rl LAMBDA => RHO [ATS label(F)] .),SIGMA,P} T,T*,B*,NC) = [ S* | (none).Substitution | B* | NC' ]
+        if (P =/= Lambda and-then not(isRelevant(getSubTerm(T*,P))))
+        /\ [ S* | NC' ] := refineObject(M,replaceSubTerm(T*,getBulletPos(T*,P),bullet(getType(getSubTerm(T*,getBulletPos(T*,P))),NC)),(NC + 1)) [owise] .
+    ceq bckSliceStep(M,S ->^{(ceq LAMBDA = RHO if COND [ATS label(F)] .),SIGMA,P} T,T*,B*,NC) = [ S* | (none).Substitution | B* | NC' ]
+        if (P =/= Lambda and-then not(isRelevant(getSubTerm(T*,P))))
+        /\ [ S* | NC' ] := refineObject(M,replaceSubTerm(T*,getBulletPos(T*,P),bullet(getType(getSubTerm(T*,getBulletPos(T*,P))),NC)),(NC + 1)) [owise] .
+    ceq bckSliceStep(M,S ->^{(crl LAMBDA => RHO if COND [ATS label(F)] .),SIGMA,P} T,T*,B*,NC) = [ S* | (none).Substitution | B* | NC' ]
+        if (P =/= Lambda and-then not(isRelevant(getSubTerm(T*,P))))
+        /\ [ S* | NC' ] := refineObject(M,replaceSubTerm(T*,getBulletPos(T*,P),bullet(getType(getSubTerm(T*,getBulletPos(T*,P))),NC)),(NC + 1)) [owise] .
+
+    ceq bckSliceStep(M,S ->^{(eq 'if_then_else_fi[T1,T2,T3] = RHO [ATS label(F)] .),(V1 <- V2 ; V3 <- V4),P} T,T*,B*,NC) = [ S* | (none).Substitution | B* | NC' ]
+        if (P == Lambda or-else isRelevant(getSubTerm(T*,P)))
+        /\ isBullet(V2) and-then isBullet(V4)
+        /\ [ S* | NC' ] := refineObject(M,replaceSubTerm(T*,P,'if_then_else_fi[T1,V2,V4]),NC) [owise] .
+
+    ceq bckSliceStep(M,S ->^{(eq LAMBDA = RHO [ATS label(F)] .),SIGMA,P} T,T*,B*,NC) = [ S* | PSI | B* | NC'' ]
+        if (P == Lambda or-else isRelevant(getSubTerm(T*,P)))
+        /\ [ THETA | NC' ] := buildInitialSub(M,SIGMA,NC)
+        /\ PSI := composition(THETA,mgu(applySub(RHO,THETA),getSubTerm(T*,P)))
+        /\ [ S* | NC'' ] := refineObject(M,replaceSubTerm(T*,P,applySub(LAMBDA,PSI)),NC') [owise] .
+
+    ceq bckSliceStep(M,S ->^{(rl LAMBDA => RHO [ATS label(F)] .),SIGMA,P} T,T*,B*,NC) = [ S* | PSI | B* | NC'' ]
+        if (P == Lambda or-else isRelevant(getSubTerm(T*,P)))
+        /\ [ THETA | NC' ] := buildInitialSub(M,SIGMA,NC)
+        /\ PSI := composition(THETA,mgu(applySub(RHO,THETA),getSubTerm(T*,P)))
+        /\ [ S* | NC'' ] := refineObject(M,replaceSubTerm(T*,P,applySub(LAMBDA,PSI)),NC') [owise] .
+
+    ceq bckSliceStep(M,S ->^{(ceq LAMBDA = RHO if COND [ATS label(F)] .),SIGMA,P} T,T*,B*,NC) = [ S* | PSI' | B*' | NC''' ]
+        if (P == Lambda or-else isRelevant(getSubTerm(T*,P)))
+        /\ [ THETA | NC' ] := buildInitialSub(M,SIGMA,NC)
+        /\ PSI := composition(THETA,mgu(applySub(RHO,THETA),getSubTerm(T*,P)))
+        /\ [ PSI' | B*' | NC'' ] := bckProcessCondition(M,COND,SIGMA,PSI,B*,NC')
+        /\ [ S* | NC'''] := refineObject(M,replaceSubTerm(T*,P,applySub(LAMBDA,PSI')),NC'') [owise] .
+
+    ceq bckSliceStep(M,S ->^{(crl LAMBDA => RHO if COND [ATS label(F)] .),SIGMA,P} T,T*,B*,NC) = [ S* | PSI' | B*' | NC''' ]
+        if (P == Lambda or-else isRelevant(getSubTerm(T*,P)))
+        /\ [ THETA | NC' ] := buildInitialSub(M,SIGMA,NC)
+        /\ PSI := composition(THETA,mgu(applySub(RHO,THETA),getSubTerm(T*,P)))
+        /\ [ PSI' | B*' | NC'' ] := bckProcessCondition(M,COND,SIGMA,PSI,B*,NC')
+        /\ [ S* | NC'''] := refineObject(M,replaceSubTerm(T*,P,applySub(LAMBDA,PSI')),NC'') [owise] .
+
+    op fwdProcessCondition : Module Condition Substitution Substitution Condition Nat -> SubCondNat .
+    eq fwdProcessCondition(M,nil,SIGMA,PSI,B*,NC) = [ PSI | B* | NC ] .
+    ceq fwdProcessCondition(M,(F[TL] = 'true.Bool) /\ COND,SIGMA,PSI,B*,NC) = fwdProcessCondition(M,COND,SIGMA,composition(PSI,PSI'),B*',NC')
+        if [ PSI' | B*' | NC' ] := fwdProcessCondition'(M,buildInsTrace(M,applySub(F[TL],SIGMA),'true.Bool),F[TL],'true.Bool,applySub(F[TL],PSI),SIGMA,PSI,B*,NC) .
+    eq fwdProcessCondition(M,(MT : SO) /\ COND,SIGMA,PSI,B*,NC) = fwdProcessCondition(M,COND,SIGMA,PSI,B*,NC) .
+    ceq fwdProcessCondition(M,(MT = PT) /\ COND,SIGMA,PSI,B*,NC) = fwdProcessCondition(M,COND,SIGMA,composition(PSI,PSI'),B*',NC')
+        if [ PSI' | B*' | NC' ] := fwdProcessCondition'(M,buildInsTrace(M,applySub(MT,SIGMA),applySub(PT,SIGMA)),MT,PT,applySub(MT,PSI),SIGMA,PSI,B*,NC) [owise] .
+    ceq fwdProcessCondition(M,(MT => PT) /\ COND,SIGMA,PSI,B*,NC) = fwdProcessCondition(M,COND,SIGMA,composition(PSI,PSI'),B*',NC')
+        if [ PSI' | B*' | NC' ] := fwdProcessCondition'(M,buildInsTrace(M,applySub(MT,SIGMA),applySub(PT,SIGMA)),MT,PT,applySub(MT,PSI),SIGMA,PSI,B*,NC) .
+    ceq fwdProcessCondition(M,(PT := MT) /\ COND,SIGMA,PSI,B*,NC) = fwdProcessCondition(M,COND,SIGMA,composition(PSI,PSI'),B*',NC')
+        if [ PSI' | B*' | NC' ] := fwdProcessCondition'(M,buildInsTrace(M,applySub(MT,SIGMA),applySub(PT,SIGMA)),MT,PT,applySub(MT,PSI),SIGMA,PSI,B*,NC) .
+
+    op bckProcessCondition : Module Condition Substitution Substitution Condition Nat -> SubCondNat .
+    eq bckProcessCondition(M,nil,SIGMA,PSI,B*,NC) = [ PSI | B* | NC ] .
+    ceq bckProcessCondition(M,COND /\ (F[TL] = 'true.Bool),SIGMA,PSI,B*,NC) = bckProcessCondition(M,COND,SIGMA,composition(PSI,PSI'),B*',NC')
+        if [ PSI' | B*' | NC' ] := bckProcessCondition'(M,buildInsTrace(M,applySub(F[TL],SIGMA),'true.Bool),F[TL],'true.Bool,'true.Bool,SIGMA,PSI,B*,NC) .
+    eq bckProcessCondition(M,COND /\ (MT : SO),SIGMA,PSI,B*,NC) = bckProcessCondition(M,COND,SIGMA,PSI,B*,NC) .
+    ceq bckProcessCondition(M,COND /\ (MT = PT),SIGMA,PSI,B*,NC) = bckProcessCondition(M,COND,SIGMA,composition(PSI,PSI'),B*',NC')
+        if [ PSI' | B*' | NC' ] := bckProcessCondition'(M,buildInsTrace(M,applySub(MT,SIGMA),applySub(PT,SIGMA)),MT,PT,applySub(PT,PSI),SIGMA,PSI,B*,NC) [owise] .
+    ceq bckProcessCondition(M,COND /\ (MT => PT),SIGMA,PSI,B*,NC) = bckProcessCondition(M,COND,SIGMA,composition(PSI,PSI'),B*',NC')
+        if [ PSI' | B*' | NC' ] := bckProcessCondition'(M,buildInsTrace(M,applySub(MT,SIGMA),applySub(PT,SIGMA)),MT,PT,applySub(PT,PSI),SIGMA,PSI,B*,NC) .
+    ceq bckProcessCondition(M,COND /\ (PT := MT),SIGMA,PSI,B*,NC) = bckProcessCondition(M,COND,SIGMA,composition(PSI,PSI'),B*',NC')
+        if [ PSI' | B*' | NC' ] := bckProcessCondition'(M,buildInsTrace(M,applySub(MT,SIGMA),applySub(PT,SIGMA)),MT,PT,applySub(PT,PSI),SIGMA,PSI,B*,NC) .
+
+    op fwdProcessCondition' : Module InsTrace TermList TermList TermList Substitution Substitution Condition Nat -> SubCondNat .
+    eq fwdProcessCondition'(M,nil,MT,PT,MT*,SIGMA,PSI,B*,NC) = [ pcomposition(mgu(PT,applySub(MT,PSI)),PSI) | B* | NC ] .
+    ceq fwdProcessCondition'(M,IT,MT,PT,MT*,SIGMA,PSI,B*,NC) = [ pcomposition(mgu(PT,PT*),PSI) | B*' | NC ]
+        if (TS* (S* ->{F,SB} PT*),B*',NC') := fwdSlicing(M,IT,MT*,B*,NC) [owise] .
+
+    op bckProcessCondition' : Module InsTrace TermList TermList TermList Substitution Substitution Condition Nat -> SubCondNat .
+    eq bckProcessCondition'(M,nil,MT,PT,PT*,SIGMA,PSI,B*,NC) = [ pcomposition(mgu(MT,applySub(PT,PSI)),PSI) | B* | NC ] .
+    ceq bckProcessCondition'(M,IT,MT,PT,PT*,SIGMA,PSI,B*,NC) = [ pcomposition(mgu(MT,MT*),PSI) | B*' | NC ]
+        if ((MT* ->{F,SB} T*) TS*,B*',NC') := bckSlicing(M,IT,PT*,B*,NC) [owise] .
+endm
+
+mod ELP-QUERY is
+    pr ELP-TRACE-SLICING .
+
+    var M : Module .
+    var N : Nat .
+    vars F F' : Qid .
+    var C : Constant .
+    vars V V' : Variable .
+    vars T T' PAT : Term .
+    vars TL TL' : TermList .
+    vars P P' : Position .
+    vars SBL SBL' : SubList .
+    var B : Bool .
+    var NETL : NeTermList .
+
+    op applySubQid : Qid TermList SubList Bool -> TermList .
+    eq applySubQid(F,TL,none,B) = TL .
+    eq applySubQid(F,empty,SBL,B) = empty .
+    eq applySubQid(F,V,SBL ; (V <- TL) ; SBL',B) = applySubQid'(F,V,SBL ; (V <- TL) ; SBL',B) .
+    eq applySubQid(F,C,SBL,B) = C .
+    eq applySubQid(F,F'[TL],SBL,B) = F'[applySubQid(F',TL,SBL,B)] .
+    eq applySubQid(F,(T,NETL),SBL,B) = (applySubQid(F,T,SBL,B),applySubQid(F,NETL,SBL,B)) .
+
+    op applySubQid' : Qid TermList SubList Bool -> TermList .
+    eq applySubQid'(F,V,SBL ; (V <- F[TL]) ; SBL',B) = applySubQid(F,V,SBL ; (V <- TL) ; SBL',B) .
+    eq applySubQid'(F,V,SBL ; (V <- TL) ; SBL',B) = if (B) then getTermList(V,TL) else TL fi [owise] .
+
+    op findMatching : Module Term Term Position Position Qid Nat -> QueryResult .
+    eq findMatching(M,T,T',P,P',F,N) = 
+        if (findMatching(M,T,T',P,P',F) == empty)
+        then nil 
+        else (N :: findMatching(M,T,T',P,P',F)) 
+        fi .
+
+    op findMatching : Module Term Term Position Position Qid -> Position .
+    eq findMatching(M,empty,PAT,P,P',F) = empty .
+    eq findMatching(M,V,PAT,P,P',F) = if (V == PAT and-then (substr(string(V),0,10) == "#!IDENTIFY")) then P else empty fi .
+    eq findMatching(M,C,PAT,P,P',F) = if (C == PAT) then P else empty fi .
+    eq findMatching(M,F[TL],PAT,P,P',F') = findMatching'(M,F[TL],PAT,P,P',F') .
+    eq findMatching(M,(T,TL),PAT,(P . N),P',F') = union(findMatching(M,T,PAT,(P . N),P',F'),findMatching(M,TL,PAT,(P . (N + 1)),P',F')) [owise] .
+
+    op findMatching' : Module Term Term Position Position Qid -> Position .
+    eq findMatching'(M,F[TL],F[TL'],P,P',F') = 
+        if (F == F') 
+        then findMatching(M,TL,F[TL'],P,P',F) 
+        else 
+            if (metaMatch(M,F[TL'],F[TL],nil,0) == noMatch) 
+            then 
+                if (not(metaAssociative(M,F[TL])) or metaMatch(M,F[(TL',bullet(getType(metaNormalize(M,F[TL'])),9999))],F[TL],nil,0) == noMatch) 
+                then findMatching(M,TL,F[TL'],(P . 1),P',noF)
+                else union(union(addQPos(F,F[TL],P),addPos(getTerm(sliceFlatStep(M,
+                    F[TL],
+                    flatten(M,applySubQid(F,F[(TL',bullet(getType(metaNormalize(M,F[TL'])),9999))],metaMatch(M,F[(TL',bullet(getType(metaNormalize(M,F[TL'])),9999))],F[TL],nil,0),false)),
+                    flatten(M,applySubQid(F,F[(TL',bullet(getType(metaNormalize(M,F[TL'])),9999))],metaMatch(M,F[(TL',bullet(getType(metaNormalize(M,F[TL'])),9999))],F[TL],nil,0),true)),
+                    0)),F[TL],P)),findMatching(M,TL,F[TL'],(P . 1),P',F))
+                fi
+            else union(union(addQPos(F,F[TL],P),addPos(getTerm(sliceFlatStep(M,
+                F[TL],
+                flatten(M,applySubQid(F,getTerm(metaNormalize(M,F[TL'])),metaMatch(M,getTerm(metaNormalize(M,F[TL'])),getTerm(metaNormalize(M,F[TL])),nil,0),false)),
+                flatten(M,applySubQid(F,getTerm(metaNormalize(M,F[TL'])),metaMatch(M,getTerm(metaNormalize(M,F[TL'])),getTerm(metaNormalize(M,F[TL])),nil,0),true)),
+                0)),F[TL],P)),findMatching(M,TL,F[TL'],(P . 1),P',F))
+            fi
+        fi .
+    eq findMatching'(M,F[TL],PAT,P,P',F') = findMatching(M,TL,PAT,(P . 1),P',noF) [owise] .
+
+    op getTermList : Variable TermList -> TermList .
+    eq getTermList(V,empty) = empty .
+    eq getTermList(V,T) = V .
+    eq getTermList(V,(T,NETL)) = (V,getTermList(V,NETL)) .
+
+    --- Filter undesired positions.
+    op addPos : TermList TermList Position -> Position .
+    eq addPos(empty,TL,P) = empty .
+    eq addPos(V,TL,P) = if (substr(string(V),0,10) == "#!IDENTIFY") then insert(P,addCPos(TL,P)) else empty fi .
+    eq addPos(C,TL,P) = P .
+    eq addPos(F[TL],F[TL'],P) = insert(P,addPos(TL,TL',P . 1)) .
+    eq addPos((T,TL),(T',TL'),P . N) = union(addPos(T,T',P . N),addPos(TL,TL',P . (N + 1))) [owise] .
+
+    --- Given an Associative Qid, a Term and a Position, returns all the positions of the possible appearances of Qid susceptible of being flattened.
+    op addQPos : Qid TermList Position -> Position .
+    eq addQPos(F,empty,P) = empty .
+    eq addQPos(F,V,P) = if (substr(string(V),0,10) == "#!IDENTIFY") then P else empty fi .
+    eq addQPos(F,C,P) = empty .
+    eq addQPos(F,F'[TL],P) = if (F == F') then insert(P,addQPos(F,TL,P . 1)) else empty fi .
+    eq addQPos(F,(T,TL),(P . N)) = union(addQPos(F,T,(P . N)),addQPos(F,TL,(P . (N + 1)))) [owise] .
+
+    --- Given a Term and a Position, returns all the positions of the terM, including its children if it had.
+    op addCPos : TermList Position -> Position .
+    eq addCPos(empty,P) = empty .
+    eq addCPos(V,P) = P .
+    eq addCPos(C,P) = P .
+    eq addCPos(F[TL],P) = insert(P,addCPos(TL,P . 1)) .
+    eq addCPos((T,TL),(P . N)) = union(addCPos(T,(P . N)),addCPos(TL,(P . (N + 1)))) [owise] .
+endm
+
+mod ELP-PROGRAM-SLICING is
+    pr ELP-BASIC .
+
+    var M : Module .
+    var C : Constant .
+    var V : Variable .
+    vars S S* T T* T' LAMBDA RHO MT PT : Term .
+    var TL : TermList .
+    var IT : InsTrace .
+    var TS* : TraceSlice .
+    vars F F' : Qid .
+    vars C* FS : QidSet .
+    var R : Rule .
+    var E : Equation .
+    vars SIGMA SIGMA* : Substitution .
+    var P : Position .
+    vars COND COND' : Condition .
+    var NC : Nat .
+    var OPD : OpDecl .
+    vars OPDS O* : OpDeclSet .
+    vars EQS E* : EquationSet .
+    vars RLS R* : RuleSet .
+    vars ATS ATS' : AttrSet .
+    var A* : AttributeSet .
+    var TYPL : TypeList .
+    var TYP : Type .
+    var SO : Sort .
+    var NETL : NeTermList .
+
+    sort ProgramSlice .
+
+    op [_:_:_:_:_] : OpDeclSet EquationSet RuleSet QidSet AttributeSet -> ProgramSlice [ctor] .
+    op getOps : ProgramSlice -> OpDeclSet .
+    eq getOps([ O* : E* : R* : C* : A* ]) = O* .
+    op getEqs : ProgramSlice -> EquationSet .
+    eq getEqs([ O* : E* : R* : C* : A* ]) = E* .
+    op getRls : ProgramSlice -> RuleSet .
+    eq getRls([ O* : E* : R* : C* : A* ]) = R* .
+    op getClasses : ProgramSlice -> QidSet .
+    eq getClasses([ O* : E* : R* : C* : A* ]) = C* .
+    op getAttrs : ProgramSlice -> AttributeSet .
+    eq getAttrs([ O* : E* : R* : C* : A* ]) = A* .
+
+    op prgSlicing : Module OpDeclSet InsTrace TraceSlice -> ProgramSlice .
+    eq prgSlicing(M,OPDS,IT,nil) = [ none : none : none : none : none ] .
+    eq prgSlicing(M,OPDS,IT,((S* ->{F,SIGMA*} T*) TS*)) = prgSlicing(M,OPDS,IT,((S* ->{F,SIGMA*} T*) TS*),[ opsSlicing(M,OPDS,S*) : none : none : clssSlicing(M,S*) : none ]) .
+
+    op prgSlicing : Module OpDeclSet InsTrace TraceSlice ProgramSlice -> ProgramSlice .
+    eq prgSlicing(M,OPDS,IT,(nil).TraceSlice,[ O* : E* : R* : C* : A* ]) = [ O* : E* : R* : C* : A* ] .
+    eq prgSlicing(M,OPDS,(S ->^{E,SIGMA,P} T) IT,(S* ->{'flattening,SIGMA*} T*) TS*,[ O* : E* : R* : C* : A* ]) = prgSlicing(M,OPDS,IT,TS*,[ O* : E* : R* : C* : A* ]) .
+    eq prgSlicing(M,OPDS,(S ->^{E,SIGMA,P} T) IT,(S* ->{'unflattening,SIGMA*} T*) TS*,[ O* : E* : R* : C* : A* ]) = prgSlicing(M,OPDS,IT,TS*,[ O* : E* : R* : C* : A* ]) .
+    eq prgSlicing(M,OPDS,(S ->^{E,SIGMA,P} T) IT,(S* ->{'builtIn,SIGMA*} T*) TS*,[ O* : E* : R* : C* : A* ]) = prgSlicing(M,OPDS,IT,TS*,[ O* : E* : R* : C* : A* ]) .
+    eq prgSlicing(M,OPDS,(S ->^{(eq LAMBDA = RHO [ATS label(F)] .),SIGMA,P} T) IT,(S* ->{F,SIGMA*} T*) TS*,[ O* : E* : R* : C* : A* ]) =
+        if (isBullet(getSubTerm(S*,P)))
+        then prgSlicing(M,OPDS,IT,TS*,[ O* : E* : R* : C* : A* ])
+        else prgSlicing(M,OPDS,IT,TS*,[ O* opsSlicing(M,OPDS,LAMBDA) opsSlicing(M,OPDS,RHO) : (E* (eq LAMBDA = RHO [ATS label(F)] .)) : R* : (C* ; clssSlicing(M,LAMBDA) ; clssSlicing(M,RHO)) : (A* , attrSlicing(M,(eq LAMBDA = RHO [ATS label(F)] .),SIGMA*)) ])
+        fi [owise] .
+    eq prgSlicing(M,OPDS,(S ->^{(ceq LAMBDA = RHO if COND [ATS label(F)] .),SIGMA,P} T) IT,(S* ->{F,SIGMA*} T*) TS*,[ O* : E* : R* : C* : A* ]) =
+        if (isBullet(getSubTerm(S*,P)))
+        then prgSlicing(M,OPDS,IT,TS*,[ O* : E* : R* : C* : A* ])
+        else prgSlicing(M,OPDS,IT,TS*,[ O* opsSlicing(M,OPDS,LAMBDA) opsSlicing(M,OPDS,RHO) opsSlicing(M,OPDS,checkConds(M,COND,getEqs(M))) : (E* (ceq LAMBDA = RHO if COND [ATS label(F)] .) checkConds(M,COND,getEqs(M))) : R* : (C* ; clssSlicing(M,LAMBDA) ; clssSlicing(M,RHO)) : (A* , attrSlicing(M,(ceq LAMBDA = RHO if COND [ATS label(F)] .),SIGMA*)) ])
+        fi [owise] .
+    eq prgSlicing(M,OPDS,(S ->^{(rl LAMBDA => RHO [ATS label(F)] .),SIGMA,P} T) IT,(S* ->{F,SIGMA*} T*) TS*,[ O* : E* : R* : C* : A* ]) =
+        if (isBullet(getSubTerm(S*,P)))
+        then prgSlicing(M,OPDS,IT,TS*,[ O* : E* : R* : C* : A* ])
+        else prgSlicing(M,OPDS,IT,TS*,[ O* opsSlicing(M,OPDS,LAMBDA) opsSlicing(M,OPDS,RHO) : E* : (R* (rl LAMBDA => RHO [ATS label(F)] .)) : (C* ; clssSlicing(M,LAMBDA) ; clssSlicing(M,RHO)) : (A* , attrSlicing(M,(rl LAMBDA => RHO [ATS label(F)] .),SIGMA*)) ])
+        fi [owise] .
+    eq prgSlicing(M,OPDS,(S ->^{(crl LAMBDA => RHO if COND [ATS label(F)] .),SIGMA,P} T) IT,(S* ->{F,SIGMA*} T*) TS*,[ O* : E* : R* : C* : A* ]) =
+        if (isBullet(getSubTerm(S*,P)))
+        then prgSlicing(M,OPDS,IT,TS*,[ O* : E* : R* : C* : A* ])
+        else prgSlicing(M,OPDS,IT,TS*,[ O* opsSlicing(M,OPDS,LAMBDA) opsSlicing(M,OPDS,RHO) opsSlicing(M,OPDS,checkConds(M,COND,getEqs(M))) opsSlicing(M,OPDS,checkConds(M,COND,getRls(M))) : (E* checkConds(M,COND,getEqs(M))) : (R* (crl LAMBDA => RHO if COND [ATS label(F)] .) checkConds(M,COND,getRls(M))) : (C* ; clssSlicing(M,LAMBDA) ; clssSlicing(M,RHO)) : (A* , attrSlicing(M,(crl LAMBDA => RHO if COND [ATS label(F)] .),SIGMA*)) ])
+        fi [owise] .
+
+    op getPatternByTL : TypeList Nat -> Term .
+    eq getPatternByTL(nil,NC) = empty .
+    eq getPatternByTL(TYP TYPL,NC) = bullet(TYP,NC),getPatternByTL(TYPL,NC + 1) [owise] .
+
+    op getPatternByOp : OpDecl -> Term .
+    eq getPatternByOp(op F : nil -> TYP [ATS] .) = empty .
+    eq getPatternByOp(op F : TYPL -> TYP [ATS] .) = F[getPatternByTL(TYPL,0)] [owise] .
+
+    op opsSlicing : Module OpDeclSet TermList -> OpDeclSet .
+    eq opsSlicing(M,OPDS,empty) = none .
+    eq opsSlicing(M,OPDS,C) = opsSlicing'(M,OPDS,C) .
+    eq opsSlicing(M,OPDS,V) = none .
+    eq opsSlicing(M,OPDS,F[TL]) = opsSlicing'(M,OPDS,F[TL]) opsSlicing(M,OPDS,TL) .
+    eq opsSlicing(M,OPDS,(T,NETL)) = opsSlicing(M,OPDS,T) opsSlicing(M,OPDS,NETL) .
+
+    op opsSlicing' : Module OpDeclSet TermList -> OpDeclSet .
+    eq opsSlicing'(M,none,T) = none .
+    eq opsSlicing'(M,OPDS,C) = opsSlicing''(M,OPDS,C) .
+    eq opsSlicing'(M,(op F : TYPL -> TYP [ATS] .) OPDS,F[TL]) = 
+        if (metaXmatch(M,getPatternByOp((op F : TYPL -> TYP [ATS] .)),F[TL],nil,0,unbounded,0) =/= noMatch) 
+        then
+            if (hasIdentity(ATS))
+            then (op F : TYPL -> TYP [ATS] .) (op getName(getIdentity(ATS)) : nil -> TYP [ none ] .) opsSlicing'(M,OPDS,F[TL]) 
+            else (op F : TYPL -> TYP [ATS] .) opsSlicing'(M,OPDS,F[TL]) 
+            fi
+        else opsSlicing'(M,OPDS,F[TL])
+        fi .
+    eq opsSlicing'(M,OPD OPDS,F[TL]) = opsSlicing'(M,OPDS,F[TL]) [owise] .
+
+    op opsSlicing'' : Module OpDeclSet Term -> OpDeclSet .
+    eq opsSlicing''(M,none,T) = none .
+    eq opsSlicing''(M,(op F : nil -> TYP [ATS] .) OPDS,C) = if ((F == getName(C)) and (TYP == getType(C))) then (op F : nil -> TYP [ATS] .) else opsSlicing''(M,OPDS,C) fi .
+    eq opsSlicing''(M,OPD OPDS,C) = opsSlicing''(M,OPDS,C) [owise] .
+
+    op opsSlicing : Module OpDeclSet EquationSet -> OpDeclSet .
+    eq opsSlicing(M,OPDS,(none).EquationSet) = none .
+    eq opsSlicing(M,OPDS,(eq LAMBDA = RHO [ATS label(F)] .) EQS) = opsSlicing(M,OPDS,LAMBDA) opsSlicing(M,OPDS,RHO) opsSlicing(M,OPDS,EQS) [owise] .
+    eq opsSlicing(M,OPDS,(ceq LAMBDA = RHO if COND [ATS label(F)] .) EQS) = opsSlicing(M,OPDS,LAMBDA) opsSlicing(M,OPDS,RHO) opsSlicing(M,OPDS,EQS) [owise] .
+
+    op opsSlicing : Module OpDeclSet RuleSet -> OpDeclSet .
+    eq opsSlicing(M,OPDS,(none).RuleSet) = none .
+    eq opsSlicing(M,OPDS,(rl LAMBDA => RHO [ATS label(F)] .) RLS) = opsSlicing(M,OPDS,LAMBDA) opsSlicing(M,OPDS,RHO) opsSlicing(M,OPDS,RLS) [owise] .
+    eq opsSlicing(M,OPDS,(crl LAMBDA => RHO if COND [ATS label(F)] .) RLS) = opsSlicing(M,OPDS,LAMBDA) opsSlicing(M,OPDS,RHO) opsSlicing(M,OPDS,RLS) [owise] .
+
+    op checkConds : Module Condition EquationSet -> EquationSet .
+    eq checkConds(M,nil,EQS) = none .
+    eq checkConds(M,(T : SO) /\ COND,EQS) = none checkConds(M,COND,EQS) .
+    eq checkConds(M,(MT = PT) /\ COND,EQS) = none checkConds(M,COND,EQS) .
+    eq checkConds(M,(S => T) /\ COND,EQS) = none checkConds(M,COND,EQS) .
+    eq checkConds(M,(T := S) /\ COND,EQS) = none checkConds(M,COND,EQS) .
+
+    op checkConds : Module Condition RuleSet -> RuleSet .
+    eq checkConds(M,nil,RLS) = none .
+    eq checkConds(M,(T : SO) /\ COND,RLS) = none checkConds(M,COND,RLS) .
+    eq checkConds(M,(MT = PT) /\ COND,RLS) = none checkConds(M,COND,RLS) .
+    eq checkConds(M,(S => T) /\ COND,RLS) = none checkConds(M,COND,RLS) .
+    eq checkConds(M,(T := S) /\ COND,RLS) = none checkConds(M,COND,RLS) .
+
+    op clssSlicing : Module Term -> QidSet .
+    eq clssSlicing(M,none) = none .
+    eq clssSlicing(M,V) = none .
+    eq clssSlicing(M,C) = none .
+    eq clssSlicing(M,F[TL]) = getClass(F[TL]) ; clssSlicing(M,TL) .
+    eq clssSlicing(M,(T,NETL)) = clssSlicing(M,T) ; clssSlicing(M,NETL) .
+
+    op getClass : Term -> Qid .
+    eq getClass('<_:_|_>[T,C,TL]) = getName(C) .
+    eq getClass('<_:_|_>[T,V,TL]) = getType(V) .
+    eq getClass(T) = none [owise] .
+
+    op attrSlicing : Module Equation Substitution -> AttributeSet .
+    eq attrSlicing(M,E,SIGMA) = none .
+    op attrSlicing : Module Rule Substitution -> AttributeSet .
+    eq attrSlicing(M,R,SIGMA) = none .
+endm
+
+mod ELP-SAT is
+    pr ELP-BASIC .
+    pr ELP-EXPAND .
+    pr ELP-TRACE-SLICING .
+    pr ACUOS .
+
+    var M : Module .
+    var C : Constant .
+    vars V V' : Variable .
+    vars F F' : Qid .
+    vars N NC ID PID PID' SOL SOL' BOUND DEPTH NEWID ATOM : Nat .
+    var I : Int .
+    var E : Equation .
+    var R : Rule .
+    vars RLS RLS' : RuleSet .
+    vars SB SB' SB1 SB2 SB3 SB4 : Substitution .
+    vars P P' : Position .
+    vars ASRL FASRL SASRL : AssertionList .
+    var ATS : AttrSet .
+    var STR : String .
+    var CO : Context .
+    var TL : TermList .
+    vars IT IT' : InsTrace .
+    vars NODES NODES' LEAVES LEAVES' : TreeNodeList .
+    var NODE : TreeNode .
+    vars S T T* T' T'' T''* PAT PAT' FORM FORM' LAMBDA RHO ROOT : Term .
+    vars B* COND : Condition .
+    var B : Bool .
+    var ASR : Assertion .
+    var SAT : SatResult .
+    var SYS : sAssertion .
+    var TS* : TraceSlice .
+    var NETL : NeTermList .
+
+    op getOutermost : Module Term Term -> TermList [memo] .
+    eq getOutermost(M,T',T) = getOutermost(M,getTerm(metaNormalize(M,getRightTerm(getLastRewStep(buildInsTrace(M,T',T)))))) .
+
+    op satAtom : Module Term Nat -> Nat .
+    eq satAtom(M,'_/\_[empty],ATOM) = 0 .
+    eq satAtom(M,'_/\_[T,TL],ATOM) = if (getTerm(metaReduce(M,T)) == 'true.Bool) then satAtom(M,'_/\_[TL],ATOM + 1) else ATOM fi .
+    eq satAtom(M,T,ATOM) = if (getTerm(metaReduce(M,T)) == 'true.Bool) then 0 else ATOM fi .
+
+    op existsMatch : Module Term Term Term Nat -> Bool .
+    eq existsMatch(M,PAT,T,FORM,N) = 
+        if metaMatch(M,PAT,T,nil,N) == noMatch 
+        then false
+        else (satAtom(M,getTerm(metaNormalize(M,applySub(FORM,metaMatch(M,PAT,T,nil,N)))),1) == 0) or-else existsMatch(M,PAT,T,FORM,(N + 1))
+        fi .
+
+    op getAtom : Term Nat -> Term .
+    eq getAtom(T,0) = T .
+    eq getAtom('_/\_[(T,TL)],ATOM) = 
+        if (ATOM == 0) 
+        then '_/\_[T,TL] 
+        else 
+            if (ATOM == 1) 
+            then T 
+            else getAtom('_/\_[TL],ATOM + (- 1))
+            fi
+        fi .
+    eq getAtom(T,ATOM) = T [owise] .
+
+    op filterVariables : Substitution Term Nat -> Substitution .
+    eq filterVariables(SB,T,ATOM) = getSub(filterVariables'([ SB | 9999 ],getAtom(T,ATOM))) .
+
+    op filterVariables' : SubNat TermList -> SubNat .
+    eq filterVariables'([ SB | NC ],empty) = [ SB | NC ] .
+    eq filterVariables'([ SB | NC ],C) = [ SB | NC ] .
+    eq filterVariables'([ (V <- T) ; SB | NC ],V) = if (isIgnored(V)) then [ (V <- T) ; SB | NC ] else [ V <- bullet(getType(V),NC) ; SB | NC + 1 ] fi .
+    eq filterVariables'([ SB | NC ],V) = [ SB | NC ] [owise] .
+    eq filterVariables'([ SB | NC ],F[TL]) = filterVariables'([ SB | NC ],TL) .
+    eq filterVariables'([ SB | NC ],(T,TL)) = filterVariables'([ getSub(filterVariables'([ SB | NC ],T)) | getNC(filterVariables'([ SB | NC ],T)) ],TL) [owise] .
+
+    op sysCriteriaRaw : Module Term sAssertion Nat Nat -> Position .
+    eq sysCriteriaRaw(M,T,sys(PAT,FORM),N,ATOM) = getMatchingPosRaw(M,T,
+        getContext(metaXmatch(M,PAT,T,nil,0,unbounded,N)),
+        applySub(PAT,getSubstitution(metaXmatch(M,PAT,T,nil,0,unbounded,N))),
+        bullet(getType(metaNormalize(M,PAT)),9999)) .
+    
+    op getMatchingPosRaw : Module Term Context Term Term -> Position .
+    eq getMatchingPosRaw(M,T,CO,PAT,PAT') = 
+        if (T == replaceHole(CO,PAT)) 
+        then recoverPos(replaceHole(CO,PAT'),Lambda,9999)
+        else 
+            if (T == getTerm(metaNormalize(M,T)))
+            then recoverPos(getTerm(sliceUnflatStep(M,T,replaceHole(CO,PAT),replaceHole(CO,PAT'),9999)),Lambda,9999)
+            else recoverPos(getTerm(sliceFlatStep(M,T,replaceHole(CO,PAT),replaceHole(CO,PAT'),9999)),Lambda,9999)
+            fi
+        fi .
+
+    op sysCriteria : Module Term sAssertion Nat Nat -> Position .
+    eq sysCriteria(M,T,sys(PAT,FORM),N,ATOM) = getMatchingPos(M,T,
+        getContext(metaXmatch(M,PAT,T,nil,0,unbounded,N)),
+        applySub(PAT,getSubstitution(metaXmatch(M,PAT,T,nil,0,unbounded,N))),
+        applySub(PAT,filterVariables(getSubstitution(metaXmatch(M,PAT,T,nil,0,unbounded,N)),getTerm(metaNormalize(M,FORM)),ATOM))) .
+    --- TODO : Single MatchPos
+    op getMatchingPos : Module Term Context Term Term -> Position .
+    eq getMatchingPos(M,T,CO,PAT,PAT') = 
+        if (T == replaceHole(CO,PAT)) 
+        then deepenPos(T,recoverPos(replaceHole(CO,PAT'),Lambda,9999))
+        else 
+            if (T == getTerm(metaNormalize(M,T)))
+            then deepenPos(T,recoverPos(getTerm(sliceUnflatStep(M,T,replaceHole(CO,PAT),replaceHole(CO,PAT'),9999)),Lambda,9999))
+            else deepenPos(T,recoverPos(getTerm(sliceFlatStep(M,T,replaceHole(CO,PAT),replaceHole(CO,PAT'),9999)),Lambda,9999))
+            fi
+        fi .
+
+    op funCriteria : Module Term fAssertion Substitution Bool Nat -> Position .
+    --- No match found
+    eq funCriteria(M,T,fun(PAT,FORM,PAT',FORM'),SB,false,ATOM) = getMatchingPos(M,getTerm(metaReduce(M,T)),getTerm(metaReduce(M,applySub(PAT',SB))),SB) .
+    --- At least one match found, but none satisfies the (post) condition
+    eq funCriteria(M,T,fun(PAT,FORM,PAT',FORM'),SB,true,ATOM) = funCriteria'(M,getTerm(metaReduce(M,T)),getTerm(metaReduce(M,applySub(PAT',SB))),applySub(FORM',SB),0) .
+
+    op funCriteria' : Module Term Term Term Nat -> Position .
+    eq funCriteria'(M,T,PAT',FORM',N) = 
+        if ((metaXmatch(M,PAT',T,nil,0,0,N)) =/= noMatch)
+        then
+            getMatchingPos(M,T,
+                getContext(metaXmatch(M,PAT',T,nil,0,0,N)),
+                applySub(PAT',getSubstitution(metaXmatch(M,PAT',T,nil,0,0,N))),
+                applySub(PAT',filterVariables(getSubstitution(metaXmatch(M,PAT',T,nil,0,0,N)),FORM',0)))
+        else Lambda
+        fi .
+
+    op getFirstTerm : TermList -> Term .
+    eq getFirstTerm((T,TL)) = T .
+    eq getFirstTerm(TL) = TL [owise] .
+
+    op refineLGG : Substitution Substitution -> Substitution .
+    eq refineLGG((SB1 ; (V <- T) ; SB2),(SB3 ; (V <- V') ; SB4)) = (V <- T) ; refineLGG((SB1 ; SB2),(SB3 ; SB4)) .
+    eq refineLGG(SB,SB') = SB ; SB' [owise] .
+
+    op getMatchingPos : Module Term Term Substitution -> Position .
+    ceq getMatchingPos(M,T,T',SB) = deepenPos(T,recoverPos(getTerm(sliceUnflatStep(M,T,T'',T''*,9999)),Lambda,0))
+        if (T''* ;;; TL) := downTerm(getTerm(metaRewrite(upModule('ACUOS,true),upTerm(lggs(M,T,applySub(T',SB))),unbounded)),empty)
+        /\ T'' := applySub(T''*,metaMatch(M,T''*,T,nil,0)) .
+    eq getMatchingPos(M,T,T',SB) = getMatchingPos'(M,T,T',SB) [owise] .
+
+    op getMatchingPos' : Module Term Term Substitution -> Position .
+    ceq getMatchingPos'(M,T,T',SB) = deepenPos(T,recoverPos(getTerm(sliceUnflatStep(M,T,T'',T''*,9999)),Lambda,0))
+        if T''* := downTerm(getTerm(metaRewrite(upModule('ACUOS,true),upTerm(lggs(M,T,applySub(T',SB))),unbounded)),empty)
+        /\ T'' := applySub(T''*,metaMatch(M,T''*,T,nil,0)) .
+    eq getMatchingPos'(M,T,T',SB) = deepenPos(T,Lambda) [owise] .
+
+    op sat? : Module SatTerm Assertions -> SatResult .
+    eq sat?(M,[ T :: TL ],[ nil :: nil ]) = sat .
+    eq sat?(M,[ T :: TL ],[ SASRL :: fun(PAT,FORM,PAT',FORM') FASRL ]) =
+        if (sat?'(M,TL,fun(PAT,FORM,PAT',FORM')) == sat)
+        then sat?(M,[ T :: TL ],[ SASRL :: FASRL ])
+        else sat?'(M,TL,fun(PAT,FORM,PAT',FORM'))
+        fi .
+    eq sat?(M,[ T :: TL ],[ sys(PAT,FORM) SASRL :: nil ]) =
+        if (sat?'(M,T,sys(PAT,FORM),0) == sat)
+        then sat?(M,[ T :: TL ],[ SASRL :: nil ])
+        else sat?'(M,T,sys(PAT,FORM),0)
+        fi .
+
+    op sat?' : Module TermList fAssertion -> SatResult .
+    eq sat?'(M,empty,fun(PAT,FORM,PAT',FORM')) = sat .
+    eq sat?'(M,(T,TL),fun(PAT,FORM,PAT',FORM')) = 
+        if (sat?''(M,T,fun(PAT,FORM,PAT',FORM'),0) == sat)
+        then sat?'(M,TL,fun(PAT,FORM,PAT',FORM'))
+        else sat?''(M,T,fun(PAT,FORM,PAT',FORM'),0)
+        fi [owise] .
+
+    op sat?' : Module Term sAssertion Nat -> SatResult .
+    eq sat?'(M,T,sys(PAT,FORM),SOL) = 
+        if metaXmatch(M,PAT,T,nil,0,unbounded,SOL) == noMatch 
+        then sat
+        else 
+            if (satAtom(M,getTerm(metaNormalize(M,applySub(FORM,getSubstitution(metaXmatch(M,PAT,T,nil,0,unbounded,SOL))))),1) == 0) 
+            then sat?'(M,T,sys(PAT,FORM),(SOL + 1))
+            else unsat(
+                (nil).InsTrace,
+                (nil).TraceSlice,
+                sys(PAT,FORM),
+                SOL,
+                getSubstitution(metaXmatch(M,PAT,T,nil,0,unbounded,SOL)),
+                Lambda,
+                satAtom(M,getTerm(metaNormalize(M,applySub(FORM,getSubstitution(metaXmatch(M,PAT,T,nil,0,unbounded,SOL))))),1)
+            )
+            fi
+        fi .
+
+    op sat?'' : Module Term fAssertion Nat -> SatResult .
+    eq sat?''(M,T,fun(PAT,FORM,PAT',FORM'),SOL) = 
+        if (not(sameKind(M,getType(metaReduce(M,PAT)),getType(metaReduce(M,T)))) or-else metaMatch(M,PAT,T,nil,SOL) == noMatch)
+        then sat
+        else
+            if (not(satAtom(M,getTerm(metaReduce(M,applySub(FORM,metaMatch(M,PAT,T,nil,SOL)))),1) == 0) or-else (existsMatch(M,getTerm(metaReduce(M,applySub(PAT',metaMatch(M,PAT,T,nil,SOL)))),getTerm(metaReduce(M,T)),applySub(FORM',metaMatch(M,PAT,T,nil,SOL)),0)))
+            then sat?''(M,T,fun(PAT,FORM,PAT',FORM'),(SOL + 1))
+            else 
+                --- no match found
+                if (not(sameKind(M,getType(metaReduce(M,PAT')),getType(metaReduce(M,T)))) or-else metaMatch(M,getTerm(metaReduce(M,applySub(PAT',metaMatch(M,PAT,T,nil,SOL)))),getTerm(metaReduce(M,T)),nil,0) == noMatch)
+                then fill(M,false,unsat(T,T,fun(PAT,FORM,PAT',FORM'),SOL,none,Lambda,0))
+                --- at least one match found, but none satisfies the condition
+                else fill(M,true,unsat(T,T,fun(PAT,FORM,PAT',FORM'),SOL,none,Lambda,0))
+                fi
+            fi
+        fi .
+
+    op satRewrite : Module Term Assertions Nat -> SatResult .
+    eq satRewrite(M,T,[ nil :: nil ],N) = sat .
+    eq satRewrite(M,T,[ sys(PAT,FORM) SASRL :: nil ],N) = 
+        if isCanonical(M,T)
+        then
+            if (sat?(M,[ T :: empty ],[ sys(PAT,FORM) SASRL :: nil ]) == sat)
+            then satRewrite'(M,(T,getTerm(metaRewrite(M,T,1))),[ sys(PAT,FORM) SASRL :: nil ],(N + -1))
+            else fill(M,T,sat?(M,[ T :: empty ],[ sys(PAT,FORM) SASRL :: nil ]))
+            fi
+        else
+            if (sat?(M,[ getTerm(metaReduce(M,T)) :: empty ],[ sys(PAT,FORM) SASRL :: nil ]) == sat)
+            then satRewrite'(M,(T,getTerm(metaReduce(M,T)),getTerm(metaRewrite(M,T,1))),[ sys(PAT,FORM) SASRL :: nil ],(N + -1))
+            else
+                if (getType(getAssertion(sat?(M,[ getTerm(metaReduce(M,T)) :: empty ],[ sys(PAT,FORM) SASRL :: nil ]))) == 'sAssertion)
+                then fill'(M,T,sat?(M,[ getTerm(metaReduce(M,T)) :: empty ],[ sys(PAT,FORM) SASRL :: nil ]))
+                else sat?(M,[ getTerm(metaReduce(M,T)) :: empty ],[ sys(PAT,FORM) SASRL :: nil ])
+                fi
+            fi
+        fi .
+    eq satRewrite(M,T,[ SASRL :: FASRL ],N) = 
+        if isCanonical(M,T)
+        then
+            if (sat?(M,[ T :: empty ],[ SASRL :: nil ]) == sat)
+            then satRewrite'(M,(T,getTerm(metaRewrite(M,T,1))),[ SASRL :: FASRL ],(N + -1))
+            else fill(M,T,sat?(M,[ T :: empty ],[ SASRL :: nil ]))
+            fi
+        else
+            if (sat?(M,[ getTerm(metaReduce(M,T)) :: getOutermost(M,getTerm(metaNormalize(M,T))) ],[ SASRL :: FASRL ]) == sat)
+            then satRewrite'(M,(T,getTerm(metaReduce(M,T)),getTerm(metaRewrite(M,T,1))),[ SASRL :: FASRL ],(N + -1))
+            else
+                if (getType(getAssertion(sat?(M,[ getTerm(metaReduce(M,T)) :: getOutermost(M,getTerm(metaNormalize(M,T))) ],[ SASRL :: FASRL ]))) == 'sAssertion)
+                then fill'(M,T,sat?(M,[ getTerm(metaReduce(M,T)) :: getOutermost(M,getTerm(metaNormalize(M,T))) ],[ SASRL :: FASRL ]))
+                else sat?(M,[ getTerm(metaReduce(M,T)) :: getOutermost(M,getTerm(metaNormalize(M,T))) ],[ SASRL :: FASRL ])
+                fi
+            fi
+        fi [owise] .
+
+    op satRewrite' : Module TermList Assertions Int -> SatResult .
+    eq satRewrite'(M,empty,[ SASRL :: FASRL ],I) = sat .
+    eq satRewrite'(M,TL,[ SASRL :: FASRL ], -1) = sat .
+    eq satRewrite'(M,(TL,T),[ sys(PAT,FORM) SASRL :: nil ],N) =
+        if sat?(M,[ T :: empty ],[ sys(PAT,FORM) SASRL :: nil ]) == sat 
+        then satRewrite'(M,(TL,T,getTerm(metaRewrite(M,T,1))),[ sys(PAT,FORM) SASRL :: nil ],(N + -1))
+        else 
+            if (getType(getAssertion(sat?(M,[ T :: empty ],[ sys(PAT,FORM) SASRL :: nil ]))) == 'sAssertion)
+            then fill''(M,(TL,T),sat?(M,[ T :: empty ],[ sys(PAT,FORM) SASRL :: nil ]))
+            else sat?(M,[ T :: empty ],[ sys(PAT,FORM) SASRL :: nil ])
+            fi
+        fi .
+
+    eq satRewrite'(M,(TL,T',T),[ SASRL :: FASRL ],I) =
+        if sat?(M,[ T :: getOutermost(M,T',T) ],[ SASRL :: FASRL ]) == sat 
+        then satRewrite'(M,(TL,T,getTerm(metaRewrite(M,T,1))),[ SASRL :: FASRL ],(I + -1))
+        else 
+            if (getType(getAssertion(sat?(M,[ T :: getOutermost(M,T',T) ],[ SASRL :: FASRL ]))) == 'sAssertion)
+            then fill''(M,(TL,T',T),sat?(M,[ T :: getOutermost(M,T',T) ],[ SASRL :: FASRL ]))
+            else sat?(M,[ T :: getOutermost(M,T',T) ],[ SASRL :: FASRL ])
+            fi
+        fi [owise] .
+
+    op satExpand : Module Term Assertions Nat -> SatResult .
+    eq satExpand(M,T,[ nil :: nil ],N) = sat .
+    eq satExpand(M,T,[ SASRL :: FASRL],N) = 
+        if isCanonical(M,T)
+        then
+            if (sat?(M,[ T :: empty ],[ SASRL :: nil ]) == sat)
+            then satExpand'(M,T,[ SASRL :: FASRL],getExeRules(getRls(M)),tree({ 0,0,'none,0,T },nil,N,0,1))
+            else fill(M,T,sat?(M,[ T :: empty ],[ SASRL :: nil ]))
+            fi
+        else                                    
+            if (sat?(M,[ getTerm(metaReduce(M,T)) :: getOutermost(M,getTerm(metaNormalize(M,T))) ],[ SASRL :: FASRL ]) == sat)
+            then satExpand'(M,T,[ SASRL :: FASRL],getExeRules(getRls(M)),tree({ 0,0,'none,0,T },nil,N,0,1))
+            else
+                if (getType(getAssertion(sat?(M,[ getTerm(metaReduce(M,T)) :: getOutermost(M,getTerm(metaNormalize(M,T))) ],[ SASRL :: FASRL ]))) == 'sAssertion)
+                then fill'(M,T,sat?(M,[ getTerm(metaReduce(M,T)) :: getOutermost(M,getTerm(metaNormalize(M,T))) ],[ SASRL :: FASRL ]))
+                else sat?(M,[ getTerm(metaReduce(M,T)) :: getOutermost(M,getTerm(metaNormalize(M,T))) ],[ SASRL :: FASRL ])
+                fi
+            fi
+        fi [owise] .
+
+    op satExpand' : Module Term Assertions RuleSet Tree -> SatResult .
+    eq satExpand'(M,ROOT,[ SASRL :: FASRL],none,tree(NODES,LEAVES,BOUND,DEPTH,NEWID)) = sat . 
+    eq satExpand'(M,ROOT,[ SASRL :: FASRL],RLS,tree(nil,LEAVES,BOUND,DEPTH,NEWID)) = sat . 
+    eq satExpand'(M,ROOT,[ SASRL :: FASRL],RLS,tree(NODES,LEAVES,BOUND,BOUND,NEWID)) = sat . 
+    eq satExpand'(M,ROOT,[ SASRL :: FASRL],RLS,tree(NODES,LEAVES,BOUND,DEPTH,NEWID)) = satExpand''(M,ROOT,[ SASRL :: FASRL],RLS,tree(NODES,LEAVES,BOUND,DEPTH,NEWID)) [owise] . 
+
+    op satExpand'' : Module Term Assertions RuleSet Tree -> SatResult .
+    eq satExpand''(M,ROOT,[ SASRL :: FASRL],RLS,tree(NODES { ID,PID,F,SOL,T } NODES',LEAVES,BOUND,DEPTH,NEWID)) = satExpand'''(M,ROOT,[ SASRL :: FASRL],RLS,tree(NODES { ID,PID,F,SOL } NODES',LEAVES,BOUND,DEPTH,NEWID),{ ID,PID,F,SOL,T },RLS,0) .
+    eq satExpand''(M,ROOT,[ SASRL :: FASRL],RLS,tree(NODES,LEAVES,BOUND,DEPTH,NEWID)) = satExpand'(M,ROOT,[ SASRL :: FASRL],RLS,tree(NODES LEAVES,nil,BOUND,(DEPTH + 1),NEWID)) [owise] .
+
+    op satExpand''' : Module Term Assertions RuleSet Tree TreeNode RuleSet Nat -> SatResult .
+    eq satExpand'''(M,ROOT,[ SASRL :: FASRL],RLS,tree(NODES,LEAVES,BOUND,DEPTH,100000),{ ID,PID,F,SOL,T },RLS,N) = sat(DEPTH + 1) . --- 100K states bound
+    eq satExpand'''(M,ROOT,[ SASRL :: FASRL],RLS,tree(NODES,LEAVES,BOUND,DEPTH,NEWID),{ ID,PID,F,SOL,T },none,N) = 
+        if (NEWID >= 100000) --- 100K states bound
+        then sat(DEPTH + 1)
+        else satExpand''(M,ROOT,[ SASRL :: FASRL],RLS,tree(NODES,LEAVES,BOUND,DEPTH,NEWID))
+        fi .
+    eq satExpand'''(M,ROOT,[ SASRL :: nil],RLS,tree(NODES,LEAVES,BOUND,DEPTH,NEWID),{ ID,PID,F,SOL,T },(rl LAMBDA => RHO [ATS label(F')] .) RLS',N) = 
+        if (NEWID >= 100000) then sat(DEPTH + 1)  --- 100K states bound
+        else
+            if (metaXapply(M,T,F',none,0,unbounded,N) =/= (failure))
+            then
+                if (sat?(M,[ getTerm(metaReduce(M,getTerm(metaXapply(M,T,F',none,0,unbounded,N)))) :: empty ],[ SASRL :: nil ]) == sat)
+                then satExpand'''(M,ROOT,[ SASRL :: nil],RLS,tree(NODES,LEAVES { NEWID,ID,F',N,getTerm(metaXapply(M,T,F',none,0,unbounded,N)) },BOUND,DEPTH,(NEWID + 1)),{ ID,PID,F,SOL,T },(rl LAMBDA => RHO [ATS label(F')] .) RLS',N + 1)
+                else 
+                    if (getType(getAssertion(sat?(M,[ getTerm(metaReduce(M,getTerm(metaXapply(M,T,F',none,0,unbounded,N)))) :: empty ],[ SASRL :: nil ]))) == 'sAssertion)
+                    then fill(M,ROOT,NODES { ID,PID,F,SOL,T },{ NEWID,ID,F',N,getTerm(metaXapply(M,T,F',none,0,unbounded,N)) },sat?(M,[ getTerm(metaReduce(M,getTerm(metaXapply(M,T,F',none,0,unbounded,N)))) :: empty ],[ SASRL :: nil ]))
+                    else sat?(M,[ getTerm(metaReduce(M,getTerm(metaXapply(M,T,F',none,0,unbounded,N)))) :: empty ],[ SASRL :: nil ])
+                    fi
+                fi
+            else satExpand'''(M,ROOT,[ SASRL :: nil],RLS,tree(NODES,LEAVES,BOUND,DEPTH,NEWID),{ ID,PID,F,SOL,T },RLS',0)
+            fi
+        fi [owise] .
+    eq satExpand'''(M,ROOT,[ SASRL :: nil],RLS,tree(NODES,LEAVES,BOUND,DEPTH,NEWID),{ ID,PID,F,SOL,T },(crl LAMBDA => RHO if COND [ATS label(F')] .) RLS',N) = 
+        if (NEWID >= 100000) then sat(DEPTH + 1)  --- 100K states bound
+        else
+            if (metaXapply(M,T,F',none,0,unbounded,N) =/= (failure))
+            then
+                if (sat?(M,[ getTerm(metaReduce(M,getTerm(metaXapply(M,T,F',none,0,unbounded,N)))) :: empty ],[ SASRL :: nil ]) == sat)
+                then satExpand'''(M,ROOT,[ SASRL :: nil],RLS,tree(NODES,LEAVES { NEWID,ID,F',N,getTerm(metaXapply(M,T,F',none,0,unbounded,N)) },BOUND,DEPTH,(NEWID + 1)),{ ID,PID,F,SOL,T },(crl LAMBDA => RHO if COND [ATS label(F')] .) RLS',N + 1)
+                else 
+                    if (getType(getAssertion(sat?(M,[ getTerm(metaReduce(M,getTerm(metaXapply(M,T,F',none,0,unbounded,N)))) :: empty ],[ SASRL :: nil ]))) == 'sAssertion)
+                    then fill(M,ROOT,NODES { ID,PID,F,SOL,T },{ NEWID,ID,F',N,getTerm(metaXapply(M,T,F',none,0,unbounded,N)) },sat?(M,[ getTerm(metaReduce(M,getTerm(metaXapply(M,T,F',none,0,unbounded,N)))) :: empty ],[ SASRL :: nil ]))
+                    else sat?(M,[ getTerm(metaReduce(M,getTerm(metaXapply(M,T,F',none,0,unbounded,N)))) :: empty ],[ SASRL :: nil ])
+                    fi
+                fi
+            else satExpand'''(M,ROOT,[ SASRL :: nil],RLS,tree(NODES,LEAVES,BOUND,DEPTH,NEWID),{ ID,PID,F,SOL,T },RLS',0)
+            fi
+        fi [owise] .
+    eq satExpand'''(M,ROOT,[ SASRL :: FASRL],RLS,tree(NODES,LEAVES,BOUND,DEPTH,NEWID),{ ID,PID,F,SOL,T },(rl LAMBDA => RHO [ATS label(F')] .) RLS',N) = 
+        if (metaXapply(M,T,F',none,0,unbounded,N) =/= (failure))
+        then
+            if (sat?(M,[ getTerm(metaReduce(M,getTerm(metaXapply(M,T,F',none,0,unbounded,N)))) :: getOutermost(M,getTerm(metaNormalize(M,replaceHole(getContext(metaXapply(M,T,F',none,0,unbounded,N)),applySub(RHO,getSubstitution(metaXapply(M,T,F',none,0,unbounded,N))))))) ],[ SASRL :: FASRL ]) == sat)
+            then satExpand'''(M,ROOT,[ SASRL :: FASRL],RLS,tree(NODES,LEAVES { NEWID,ID,F',N,getTerm(metaXapply(M,T,F',none,0,unbounded,N)) },BOUND,DEPTH,(NEWID + 1)),{ ID,PID,F,SOL,T },(rl LAMBDA => RHO [ATS label(F')] .) RLS',N + 1)
+            else 
+                if (getType(getAssertion(sat?(M,[ getTerm(metaReduce(M,getTerm(metaXapply(M,T,F',none,0,unbounded,N)))) :: getOutermost(M,getTerm(metaNormalize(M,replaceHole(getContext(metaXapply(M,T,F',none,0,unbounded,N)),applySub(RHO,getSubstitution(metaXapply(M,T,F',none,0,unbounded,N))))))) ],[ SASRL :: FASRL ]))) == 'sAssertion)
+                then fill(M,ROOT,NODES { ID,PID,F,SOL,T },{ NEWID,ID,F',N,getTerm(metaXapply(M,T,F',none,0,unbounded,N)) },sat?(M,[ getTerm(metaReduce(M,getTerm(metaXapply(M,T,F',none,0,unbounded,N)))) :: getOutermost(M,getTerm(metaNormalize(M,replaceHole(getContext(metaXapply(M,T,F',none,0,unbounded,N)),applySub(RHO,getSubstitution(metaXapply(M,T,F',none,0,unbounded,N))))))) ],[ SASRL :: FASRL ]))
+                else sat?(M,[ getTerm(metaReduce(M,getTerm(metaXapply(M,T,F',none,0,unbounded,N)))) :: getOutermost(M,getTerm(metaNormalize(M,replaceHole(getContext(metaXapply(M,T,F',none,0,unbounded,N)),applySub(RHO,getSubstitution(metaXapply(M,T,F',none,0,unbounded,N))))))) ],[ SASRL :: FASRL ])
+                fi
+            fi
+        else satExpand'''(M,ROOT,[ SASRL :: FASRL],RLS,tree(NODES,LEAVES,BOUND,DEPTH,NEWID),{ ID,PID,F,SOL,T },RLS',0)
+        fi [owise] .
+    eq satExpand'''(M,ROOT,[ SASRL :: FASRL],RLS,tree(NODES,LEAVES,BOUND,DEPTH,NEWID),{ ID,PID,F,SOL,T },(crl LAMBDA => RHO if COND [ATS label(F')] .) RLS',N) = 
+        if (metaXapply(M,T,F',none,0,unbounded,N) =/= (failure))
+        then
+            if (sat?(M,[ getTerm(metaReduce(M,getTerm(metaXapply(M,T,F',none,0,unbounded,N)))) :: getOutermost(M,getTerm(metaNormalize(M,replaceHole(getContext(metaXapply(M,T,F',none,0,unbounded,N)),applySub(RHO,getSubstitution(metaXapply(M,T,F',none,0,unbounded,N))))))) ],[ SASRL :: FASRL ]) == sat)
+            then satExpand'''(M,ROOT,[ SASRL :: FASRL],RLS,tree(NODES,LEAVES { NEWID,ID,F',N,getTerm(metaXapply(M,T,F',none,0,unbounded,N)) },BOUND,DEPTH,(NEWID + 1)),{ ID,PID,F,SOL,T },(crl LAMBDA => RHO if COND [ATS label(F')] .) RLS',N + 1)
+            else 
+                if (getType(getAssertion(sat?(M,[ getTerm(metaReduce(M,getTerm(metaXapply(M,T,F',none,0,unbounded,N)))) :: getOutermost(M,getTerm(metaNormalize(M,replaceHole(getContext(metaXapply(M,T,F',none,0,unbounded,N)),applySub(RHO,getSubstitution(metaXapply(M,T,F',none,0,unbounded,N))))))) ],[ SASRL :: FASRL ]))) == 'sAssertion)
+                then fill(M,ROOT,NODES { ID,PID,F,SOL,T },{ NEWID,ID,F',N,getTerm(metaXapply(M,T,F',none,0,unbounded,N)) },sat?(M,[ getTerm(metaReduce(M,getTerm(metaXapply(M,T,F',none,0,unbounded,N)))) :: getOutermost(M,getTerm(metaNormalize(M,replaceHole(getContext(metaXapply(M,T,F',none,0,unbounded,N)),applySub(RHO,getSubstitution(metaXapply(M,T,F',none,0,unbounded,N))))))) ],[ SASRL :: FASRL ]))
+                else sat?(M,[ getTerm(metaReduce(M,getTerm(metaXapply(M,T,F',none,0,unbounded,N)))) :: getOutermost(M,getTerm(metaNormalize(M,replaceHole(getContext(metaXapply(M,T,F',none,0,unbounded,N)),applySub(RHO,getSubstitution(metaXapply(M,T,F',none,0,unbounded,N))))))) ],[ SASRL :: FASRL ])
+                fi
+            fi
+        else satExpand'''(M,ROOT,[ SASRL :: FASRL],RLS,tree(NODES,LEAVES,BOUND,DEPTH,NEWID),{ ID,PID,F,SOL,T },RLS',0)
+        fi [owise] .
+
+    op satAsync : Module Assertions InsTrace -> SatResult .
+    eq satAsync(M,[ nil :: nil ],IT) = sat .
+    eq satAsync(M,[ SASRL :: FASRL ],nil) = sat .
+    eq satAsync(M,[ SASRL :: FASRL ],(S ->^{E,SB,P} T) IT) =
+        if isCanonical(M,S)
+        then --- check only sys in S
+            if (sat?(M,[ S :: empty ],[ SASRL :: nil ]) == sat)
+            then satAsync'(M,[ SASRL :: FASRL ],nil,(S ->^{E,SB,P} T) IT)
+            else fill(M,S,sat?(M,[ S :: empty ],[ SASRL :: nil ]))
+            fi
+        else --- check both in S
+            if (sat?(M,[ S :: getOutermost(M,getTerm(metaNormalize(M,S))) ],[ SASRL :: FASRL ]) == sat)
+            then satAsync'(M,[ SASRL :: FASRL ],nil,(S ->^{E,SB,P} T) IT)
+            else 
+                if (getType(getAssertion(sat?(M,[ S :: getOutermost(M,getTerm(metaNormalize(M,S))) ],[ SASRL :: FASRL ]))) == 'sAssertion)
+                then fill(M,S,sat?(M,[ S :: getOutermost(M,getTerm(metaNormalize(M,S))) ],[ SASRL :: FASRL ]))
+                else sat?(M,[ S :: getOutermost(M,getTerm(metaNormalize(M,S))) ],[ SASRL :: FASRL ])
+                fi
+            fi
+        fi .
+    eq satAsync(M,[ SASRL :: FASRL ],(S ->^{R,SB,P} T) IT) =
+        --- check only sys in S
+        if (sat?(M,[ S :: empty ],[ SASRL :: nil ]) == sat)
+        then satAsync'(M,[ SASRL :: FASRL ],nil,(S ->^{R,SB,P} T) IT)
+        else fill(M,S,sat?(M,[ S :: empty ],[ SASRL :: nil ]))
+        fi .
+
+    op satAsync' : Module Assertions InsTrace InsTrace -> SatResult .
+    eq satAsync'(M,[ SASRL :: FASRL ],IT',nil) = sat .
+    eq satAsync'(M,[ SASRL :: FASRL ],IT',(S ->^{E,SB,P} T) IT) =
+        --- check only sys in T
+        if (IT == nil or-else isCanonical(M,T))
+        then
+            if (sat?(M,[ T :: empty ],[ SASRL :: nil ]) == sat)
+            then 
+                if (IT == nil) 
+                then sat
+                else satAsync'(M,[ SASRL :: FASRL ],IT' (S ->^{E,SB,P} T),IT)
+                fi
+            else fill(M,IT' (S ->^{E,SB,P} T),sat?(M,[ T :: empty ],[ SASRL :: nil ]))
+            fi
+        else satAsync'(M,[ SASRL :: FASRL ],IT' (S ->^{E,SB,P} T),IT)
+        fi .
+    eq satAsync'(M,[ SASRL :: FASRL ],IT',(S ->^{R,SB,P} T) IT) =
+        if isCanonical(M,T)
+        then --- check only system
+            if (sat?(M,[ T :: empty ],[ SASRL :: nil ]) == sat)
+            then satAsync'(M,[ SASRL :: FASRL ],IT' (S ->^{R,SB,P} T),IT)
+            else fill(M,IT' (S ->^{R,SB,P} T),sat?(M,[ T :: empty ],[ SASRL :: nil ]))
+            fi
+        else --- check only fun (or both if IT == nil)
+            if (IT == nil)
+            then --- check both
+                if (sat?(M,[ T :: getOutermost(M,getTerm(metaNormalize(M,T))) ],[ SASRL :: FASRL ]) == sat)
+                then sat
+                else 
+                    if (getType(getAssertion(sat?(M,[ T :: getOutermost(M,getTerm(metaNormalize(M,T))) ],[ SASRL :: FASRL ]))) == 'sAssertion)
+                    then fill(M,IT' (S ->^{R,SB,P} T),sat?(M,[ T :: getOutermost(M,getTerm(metaNormalize(M,T))) ],[ SASRL :: FASRL ]))
+                    else sat?(M,[ T :: getOutermost(M,getTerm(metaNormalize(M,T))) ],[ SASRL :: FASRL ])
+                    fi
+                fi
+            else --- check fun
+                if (sat?(M,[ T :: getOutermost(M,getTerm(metaNormalize(M,T))) ],[ nil :: FASRL ]) == sat)
+                then satAsync'(M,[ SASRL :: FASRL ],IT' (S ->^{R,SB,P} T),IT)
+                else sat?(M,[ T :: getOutermost(M,getTerm(metaNormalize(M,T))) ],[ nil :: FASRL ])
+                fi
+            fi
+        fi .
+
+    --- satRewrite rebuildTrace
+    op rebuildTrace : Module TermList -> InsTrace .
+    eq rebuildTrace(M,(T,T')) = buildInsTrace(M,T,T') .
+    eq rebuildTrace(M,(T,T',TL)) = buildInsTrace(M,T,T') rebuildTrace(M,(T',TL)) .
+    eq rebuildTrace(M,TL) = nil [owise] .
+
+    --- satExpand rebuildTrace
+    op rebuildTrace : Module Term TreeNodeList TreeNode -> InsTrace .
+    eq rebuildTrace(M,ROOT,NODES,NODE) = rebuildTrace''(M,ROOT,rebuildTrace'(M,NODES,NODE)) .
+
+    op rebuildTrace' : Module TreeNodeList TreeNode -> TreeNodeList .
+    eq rebuildTrace'(M,NODES { PID,PID',F',SOL'} NODES',{ ID,PID,F,SOL,T }) = rebuildTrace'(M,NODES NODES',{ PID,PID',F',SOL'}) { ID,PID,F,SOL,T } .
+    eq rebuildTrace'(M,NODES { PID,PID',F',SOL'} NODES',{ ID,PID,F,SOL }) = rebuildTrace'(M,NODES NODES',{ PID,PID',F',SOL'}) { ID,PID,F,SOL } .
+    eq rebuildTrace'(M,NODES,{ 0,PID,F,SOL }) = nil [owise] .
+
+    op rebuildTrace'' : Module Term TreeNodeList -> InsTrace .
+    eq rebuildTrace''(M,S,{ ID,PID,F,SOL,T }) = buildInsTrace(M,S,getRule(M,F),SOL) .
+    eq rebuildTrace''(M,S,{ ID,PID,F,SOL } NODES) = buildInsTrace(M,S,getRule(M,F),SOL) rebuildTrace''(M,getLastTerm(buildInsTrace(M,S,getRule(M,F),SOL)),NODES) .
+
+    --- complete unsat info
+    op fill : Module Bool SatResult -> SatResult .
+    eq fill(M,B,unsat(T,T*,fun(PAT,FORM,PAT',FORM'),SOL,SB,P,ATOM)) = unsat(
+        buildInsTraceEQ(M,T,redTrace(M,T,false)),
+        getTrace(bckSlicing(M,
+            buildInsTraceEQ(M,T,redTrace(M,T,false)),
+            getTerm(slice(M,getLastTerm(buildInsTraceEQ(M,T,redTrace(M,T,false))),Lambda,extendPos(funCriteria(M,getLastTerm(buildInsTraceEQ(M,T,redTrace(M,T,false))),fun(PAT,FORM,PAT',FORM'),metaMatch(M,PAT,T,nil,SOL),B,0)),0)),
+            nil,
+            getNC(slice(M,getLastTerm(buildInsTraceEQ(M,T,redTrace(M,T,false))),Lambda,extendPos(funCriteria(M,getLastTerm(buildInsTraceEQ(M,T,redTrace(M,T,false))),fun(PAT,FORM,PAT',FORM'),metaMatch(M,PAT,T,nil,SOL),B,0)),0))
+        )),
+        fun(PAT,FORM,PAT',FORM'),
+        SOL,
+        metaMatch(M,PAT,T,nil,SOL),
+        getPrefix(funCriteria(M,getLastTerm(buildInsTraceEQ(M,T,redTrace(M,T,false))),fun(PAT,FORM,PAT',FORM'),metaMatch(M,PAT,T,nil,SOL),B,0)),
+        ATOM) .
+
+    --- satRewrite unsat
+    op fill : Module Term SatResult -> SatResult .
+    eq fill(M,T,unsat(IT,TS*,ASR,SOL,SB,P,ATOM)) = unsat(T,getTerm(slice(M,T,Lambda,extendPos(sysCriteria(M,T,ASR,SOL,ATOM)),0)),ASR,SOL,SB,getPrefix(sysCriteria(M,T,ASR,SOL,ATOM)),ATOM) .
+
+    op fill' : Module Term SatResult -> SatResult .
+    eq fill'(M,T,unsat(IT,TS*,ASR,SOL,SB,P,ATOM)) = unsat(
+        buildInsTraceEQ(M,T,redTrace(M,T,false)),
+        getTrace(bckSlicing(M,
+            buildInsTraceEQ(M,T,redTrace(M,T,false)),
+            getTerm(slice(M,getTerm(metaReduce(M,T)),Lambda,extendPos(sysCriteria(M,getTerm(metaReduce(M,T)),ASR,SOL,ATOM)),0)),
+            nil,
+            getNC(slice(M,getTerm(metaReduce(M,T)),Lambda,extendPos(sysCriteria(M,getTerm(metaReduce(M,T)),ASR,SOL,ATOM)),0))
+        )),
+        ASR,SOL,SB,getPrefix(sysCriteria(M,getTerm(metaReduce(M,T)),ASR,SOL,ATOM)),ATOM) .
+
+    op fill'' : Module TermList SatResult -> SatResult .
+    eq fill''(M,(TL,T),unsat(IT,TS*,ASR,SOL,SB,P,ATOM)) = unsat(
+        rebuildTrace(M,(TL,T)),
+        getTrace(bckSlicing(M,
+            rebuildTrace(M,(TL,T)),
+            getTerm(slice(M,T,Lambda,extendPos(sysCriteria(M,T,ASR,SOL,ATOM)),0)),
+            nil,
+            getNC(slice(M,T,Lambda,extendPos(sysCriteria(M,T,ASR,SOL,ATOM)),0))
+        )),
+        ASR,SOL,SB,getPrefix(sysCriteria(M,T,ASR,SOL,ATOM)),ATOM) .
+
+    --- satExpand unsat
+    op fill : Module Term TreeNodeList TreeNode SatResult -> SatResult .
+    eq fill(M,ROOT,NODES,{ ID,PID,F,SOL,T },unsat(IT,TS*,ASR,SOL',SB,P,ATOM)) = unsat(
+        rebuildTrace(M,ROOT,NODES,{ ID,PID,F,SOL,T }),
+        getTrace(bckSlicing(M,
+            rebuildTrace(M,ROOT,NODES,{ ID,PID,F,SOL,T }),
+            getTerm(slice(M,getTerm(metaReduce(M,T)),Lambda,extendPos(sysCriteria(M,getTerm(metaReduce(M,T)),ASR,SOL',ATOM)),0)),
+            nil,
+            getNC(slice(M,getTerm(metaReduce(M,T)),Lambda,extendPos(sysCriteria(M,getTerm(metaReduce(M,T)),ASR,SOL',ATOM)),0))
+        )),
+        ASR,SOL',SB,getPrefix(sysCriteria(M,getTerm(metaReduce(M,T)),ASR,SOL',ATOM)),ATOM) .
+
+    --- satAsync unsat
+    op fill : Module InsTrace SatResult -> SatResult .
+    eq fill(M,IT' (S ->^{R,SB,P} T),unsat(IT,TS*,ASR,SOL,SB',P',ATOM)) = unsat(IT' (S ->^{R,SB,P} T),getTrace(bckSlicing(M,IT' (S ->^{R,SB,P} T),getTerm(slice(M,T,Lambda,extendPos(sysCriteria(M,T,ASR,SOL,ATOM)),0)),nil,getNC(slice(M,T,Lambda,extendPos(sysCriteria(M,T,ASR,SOL,ATOM)),0)))),ASR,SOL,SB',getPrefix(sysCriteria(M,T,ASR,SOL,ATOM)),ATOM) .
+    eq fill(M,IT' (S ->^{E,SB,P} T),unsat(IT,TS*,ASR,SOL,SB',P',ATOM)) = unsat(IT' (S ->^{E,SB,P} T),getTrace(bckSlicing(M,IT' (S ->^{E,SB,P} T),getTerm(slice(M,T,Lambda,extendPos(sysCriteria(M,T,ASR,SOL,ATOM)),0)),nil,getNC(slice(M,T,Lambda,extendPos(sysCriteria(M,T,ASR,SOL,ATOM)),0)))),ASR,SOL,SB',getPrefix(sysCriteria(M,T,ASR,SOL,ATOM)),ATOM) .
+endm
+
+mod ELP-AUTOFIX is
+    pr ELP-SAT .
+    --- Work-in-progress ---
+endm
+
+mod ELP-DOWNTERM is
+    pr ELP-BASIC .
+
+    var M : Module .
+    var F : Qid .
+    vars S T : Term .
+    var TL : TermList .
+    var SO : Sort .
+    vars COND COND' : Condition .
+    var N : Nat .
+    var P : Position .
+    var TYP : Type .
+    var TYPL : TypeList .
+    var B : Bool .
+
+
+    op string : Bool -> String .
+    eq string(true) = "true" .
+    eq string(false) = "false" .
+
+    op string : Position -> String .
+    eq string((empty).Set{Position}) = "" .
+    eq string(noPos) = "" .
+    eq string(Lambda) = "L" .
+    eq string(Lambda . N . P) = string(N,10) + string(P) .
+    eq string(N . P) = if (N == 0) then string(P) else "." + string(N,10) + string(P) fi .
+
+    op toString : TypeList -> String .
+    eq toString((nil).TypeList) = "" .
+    eq toString(TYP TYPL) = string(TYP) + " " + toString(TYPL) [owise] .
+
+    op toString : Module Condition Bool -> String .
+    eq toString(M,(nil).Condition,B) = "" .
+    eq toString(M,F[TL] = 'true.Bool,true) = metaString(M,F[TL],true) .
+    eq toString(M,F[TL] = 'true.Bool,false) = metaString(M,F[TL],false) + " = 'true.Bool" .
+    eq toString(M,T : SO,true) = metaString(M,T,true) + " : " + string(SO) .
+    eq toString(M,T : SO,false) = metaString(M,T,false) + " : '" + string(SO) .
+    eq toString(M,S = T,B) = metaString(M,S,B) + " = " + metaString(M,T,B) .
+    eq toString(M,T := S,B) = metaString(M,T,B) + " := " + metaString(M,S,B) .
+    eq toString(M,S => T,B) = metaString(M,S,B) + " => " + metaString(M,T,B) .
+    eq toString(M,COND /\ COND',B) = if (COND' == nil) then toString(M,COND,B) else toString(M,COND,B) + " /\\ " + toString(M,COND',B) fi [owise] .
+endm
+
+mod ELP-JSON is
+    pr ELP-DOWNTERM .
+    pr ELP-PROGRAM-SLICING .
+
+    var M : Module .
+    vars P : Position .
+    vars SB SIGMA PSI : Substitution .
+    vars COND COND' B* : Condition .
+    var V : Variable .
+    vars S S* T T' T* LAMBDA RHO PAT PAT' FORM FORM' : Term .
+    var TL : TermList .
+    var ATS : AttrSet .
+    var F : Qid .
+    var FL : QidList .
+    var KS : KindSet .
+    var K : Kind .
+    var IT : InsTrace .
+    var TS* : TraceSlice .
+    var ITSTEP : InsTraceStep .
+    var TSSTEP : TraceSliceStep .
+    vars N NC ATOM SOL : Nat .
+    var SP : Set{Position} .
+    var SO : Sort .
+    var ASR : Assertion .
+    var STR : String .
+    var B : Bool .
+    vars OPDS O* : OpDeclSet .
+    var OPD : OpDecl .
+    var TYP : Type .
+    var TYPL : TypeList .
+    var QR : QueryResult .
+    var A* : AttributeSet .
+    vars C* FS : QidSet .
+    var E* : EquationSet .
+    var R* : RuleSet .
+    vars R FIX : Rule .
+
+    op json : Module Term -> String .
+    eq json(M,T) = "{ELP-DQsourceELP-DQ:ELP-DQ" + metaString(M,T,true) +
+        "ELP-DQ,ELP-DQmapELP-DQ:ELP-DQ" + metaMap(M,T) +
+        "ELP-DQ,ELP-DQmetaELP-DQ:ELP-DQ" + metaString(M,T,false) + 
+        "ELP-DQ,ELP-DQtypeELP-DQ:ELP-DQ" + string(getType(metaNormalize(M,T))) + 
+        "ELP-DQ,ELP-DQnormalELP-DQ:" + string(getTerm(metaNormalize(M,T)) == T) + "}" .
+
+    op json' : KindSet -> String .
+    eq json'((none).KindSet) = "" .
+    eq json'(K ; KS) = if (KS == none) then string(K) else string(K) + " ; " + json'(KS) fi [owise] .
+
+    op json : QidSet -> String .
+    eq json((none).QidSet) = "" .
+    eq json(F ; FS) = if (FS == none) then "{ELP-DQvalELP-DQ:ELP-DQ" + string(F) + "ELP-DQ}" else "{ELP-DQvalELP-DQ:ELP-DQ" + string(F) + "ELP-DQ}," + json(FS) fi [owise] .
+
+    op json : QidList Bool -> String .
+    eq json(F nil,true) = string(F) .
+    eq json(F nil,false) = "'" + string(F) .
+    eq json(F FL,true) = string(F) + " " + json(FL,true) [owise] .
+    eq json(F FL,false) = "'" + string(F) + " " + json(FL,false) [owise] .
+
+    op json : Position -> String .
+    eq json((empty).Set{Position}) = "" .
+    eq json(noPos) = "" .
+    eq json(Lambda) = "L" .
+    eq json(Lambda . N) = "L." + string(N,10) .
+    eq json(Lambda . N . P) = "L." + string(N,10) + json(P) .
+    eq json(N . P) = if (N == 0) then "L." + json(P) else "." + string(N,10) + json(P) fi .
+    eq json((P , SP)) = if (SP == (empty).Set{Position}) then json(P) else json(P) + "," + json(SP) fi [owise] .
+
+    op json : Module InsTrace -> String .
+    eq json(M,(nil).InsTrace) = "" .
+    eq json(M,ITSTEP nil) = json'(M,ITSTEP) .
+    eq json(M,ITSTEP IT) = json'(M,ITSTEP) + "," + json(M,IT) [owise] .
+
+    op json' : Module InsTraceStep -> String .
+    eq json'(M,(S ->^{(eq LAMBDA = RHO [ATS label(F)] .),SIGMA,P} T)) = 
+        "{ELP-DQtermELP-DQ:" + json(M,T) + 
+        ",ELP-DQruleELP-DQ:" + json(M,(eq LAMBDA = RHO [ATS label(F)] .)) + 
+        ",ELP-DQposELP-DQ:ELP-DQ" + json(P) + 
+        "ELP-DQ,ELP-DQsubELP-DQ:[" + json(M,SIGMA) + 
+        "],ELP-DQcondELP-DQ:[]}" .
+    eq json'(M,(S ->^{(rl LAMBDA => RHO [ATS label(F)] .),SIGMA,P} T)) = 
+        "{ELP-DQtermELP-DQ:" + json(M,T) + 
+        ",ELP-DQruleELP-DQ:" + json(M,(rl LAMBDA => RHO [ATS label(F)] .)) + 
+        ",ELP-DQposELP-DQ:ELP-DQ" + json(P) + 
+        "ELP-DQ,ELP-DQsubELP-DQ:[" + json(M,SIGMA) + 
+        "],ELP-DQcondELP-DQ:[]}" .
+    eq json'(M,(S ->^{(ceq LAMBDA = RHO if COND [ATS label(F)] .),SIGMA,P} T)) = 
+        "{ELP-DQtermELP-DQ:" + json(M,T) + 
+        ",ELP-DQruleELP-DQ:" + json(M,(ceq LAMBDA = RHO if COND [ATS label(F)] .)) + 
+        ",ELP-DQposELP-DQ:ELP-DQ" + json(P) + 
+        "ELP-DQ,ELP-DQsubELP-DQ:[" + json(M,SIGMA) + 
+        "],ELP-DQcondELP-DQ:[" + json(M,applySub2Cond(COND,SIGMA)) + "]}" .
+    eq json'(M,(S ->^{(crl LAMBDA => RHO if COND [ATS label(F)] .),SIGMA,P} T)) = 
+        "{ELP-DQtermELP-DQ:" + json(M,T) + 
+        ",ELP-DQruleELP-DQ:" + json(M,(crl LAMBDA => RHO if COND [ATS label(F)] .)) + 
+        ",ELP-DQposELP-DQ:ELP-DQ" + json(P) + 
+        "ELP-DQ,ELP-DQsubELP-DQ:[" + json(M,SIGMA) + 
+        "],ELP-DQcondELP-DQ:[" + json(M,applySub2Cond(COND,SIGMA)) + "]}" .
+
+    op json : OpDeclSet -> String .
+    eq json((none).OpDeclSet) = "" .
+    eq json(OPD none) = json'(OPD) .
+    eq json(OPD OPDS) = json'(OPD) + "," + json(OPDS) [owise] .
+
+    op json' : OpDecl -> String .
+    eq json'((op F : nil -> TYP [ATS] .)) = "{ELP-DQopELP-DQ:ELP-DQ" + string(F) + " " + string(TYP) + "ELP-DQ}" .
+    eq json'((op F : TYPL -> TYP [ATS] .)) = "{ELP-DQopELP-DQ:ELP-DQ" + string(F) + " " + toString(TYPL) + string(TYP) + "ELP-DQ}" [owise] .
+
+    op json : Module InsTrace OutputTriple OpDeclSet -> String .
+    eq json(M,(nil).InsTrace,(TS*,B*,NC),OPDS) = "ELP-DQtraceELP-DQ:[],ELP-DQcompELP-DQ:[],ELP-DQopsELP-DQ:[]" .
+    eq json(M,IT,(TS*,B*,NC),OPDS) = "ELP-DQtraceELP-DQ:[" + json(M,IT,TS*) + "],ELP-DQcompELP-DQ:{ELP-DQsourceELP-DQ:ELP-DQSOURCE_COMPELP-DQ,ELP-DQmetaELP-DQ:ELP-DQMETA_COMPELP-DQ}" + json(M,prgSlicing(M,OPDS,IT,TS*)) [owise] .
+
+    op json : Module InsTrace TraceSlice -> String .
+    eq json(M,(nil).InsTrace,TS*) = "" .
+    eq json(M,ITSTEP nil,TSSTEP nil) = json'(M,ITSTEP,TSSTEP) .
+    eq json(M,ITSTEP IT,TSSTEP TS*) = json'(M,ITSTEP,TSSTEP) + "," + json(M,IT,TS*) [owise] .
+
+    op json' : Module InsTraceStep TraceSliceStep -> String .
+    eq json'(M,(S ->^{(eq LAMBDA = RHO [ATS label(F)] .),SIGMA,P} T),(S* ->{F,PSI} T*)) = 
+        "{ELP-DQtermELP-DQ:" + json(M,T) + 
+        ",ELP-DQsliceELP-DQ:" + json(M,T*) + 
+        ",ELP-DQrelevELP-DQ:" + string(if ((F == 'flattening) or-else (F == 'unflattening)) then false else isRelevant(getSubTerm(S*,P)) fi) + 
+        ",ELP-DQruleELP-DQ:" + json(M,(eq LAMBDA = RHO [ATS label(F)] .)) + 
+        ",ELP-DQposELP-DQ:ELP-DQ" + json(P) + 
+        "ELP-DQ,ELP-DQsubELP-DQ:[" + json(M,SIGMA) + 
+        "],ELP-DQsubsliELP-DQ:[" + json(M,PSI) + 
+        "],ELP-DQcondELP-DQ:[],ELP-DQcondsliELP-DQ:[]}" .
+    eq json'(M,(S ->^{(rl LAMBDA => RHO [ATS label(F)] .),SIGMA,P} T),(S* ->{F,PSI} T*)) = 
+        "{ELP-DQtermELP-DQ:" + json(M,T) + 
+        ",ELP-DQsliceELP-DQ:" + json(M,T*) + 
+        ",ELP-DQrelevELP-DQ:" + string(isRelevant(getSubTerm(S*,P))) + 
+        ",ELP-DQruleELP-DQ:" + json(M,(rl LAMBDA => RHO [ATS label(F)] .)) + 
+        ",ELP-DQposELP-DQ:ELP-DQ" + json(P) + 
+        "ELP-DQ,ELP-DQsubELP-DQ:[" + json(M,SIGMA) + 
+        "],ELP-DQsubsliELP-DQ:[" + json(M,PSI) + 
+        "],ELP-DQcondELP-DQ:[],ELP-DQcondsliELP-DQ:[]}" .
+    eq json'(M,(S ->^{(ceq LAMBDA = RHO if COND [ATS label(F)] .),SIGMA,P} T),(S* ->{F,PSI} T*)) = 
+        "{ELP-DQtermELP-DQ:" + json(M,T) + 
+        ",ELP-DQsliceELP-DQ:" + json(M,T*) + 
+        ",ELP-DQrelevELP-DQ:" + string(isRelevant(getSubTerm(S*,P))) + 
+        ",ELP-DQruleELP-DQ:" + json(M,(ceq LAMBDA = RHO if COND [ATS label(F)] .)) + 
+        ",ELP-DQposELP-DQ:ELP-DQ" + json(P) + 
+        "ELP-DQ,ELP-DQsubELP-DQ:[" + json(M,SIGMA) + 
+        "],ELP-DQsubsliELP-DQ:[" + json(M,PSI) + 
+        "],ELP-DQcondELP-DQ:[" + json(M,applySub2Cond(COND,SIGMA)) + "],ELP-DQcondsliELP-DQ:[" + json(M,applySub2Cond(COND,PSI)) + "]}" .
+    eq json'(M,(S ->^{(crl LAMBDA => RHO if COND [ATS label(F)] .),SIGMA,P} T),(S* ->{F,PSI} T*)) = 
+        "{ELP-DQtermELP-DQ:" + json(M,T) + 
+        ",ELP-DQsliceELP-DQ:" + json(M,T*) + 
+        ",ELP-DQrelevELP-DQ:" + string(isRelevant(getSubTerm(S*,P))) + 
+        ",ELP-DQruleELP-DQ:" + json(M,(crl LAMBDA => RHO if COND [ATS label(F)] .)) + 
+        ",ELP-DQposELP-DQ:ELP-DQ" + json(P) + 
+        "ELP-DQ,ELP-DQsubELP-DQ:[" + json(M,SIGMA) + 
+        "],ELP-DQsubsliELP-DQ:[" + json(M,PSI) + 
+        "],ELP-DQcondELP-DQ:[" + json(M,applySub2Cond(COND,SIGMA)) + "],ELP-DQcondsliELP-DQ:[" + json(M,applySub2Cond(COND,PSI)) + "]}" .
+
+    op json : Module InsTrace Substitution -> String .
+    eq json(M,(nil).InsTrace,SB) = "" .
+    eq json(M,ITSTEP nil,SB) = json'(M,ITSTEP,SB) .
+    eq json(M,ITSTEP IT,SB) = json'(M,ITSTEP,SB) + "," + json(M,IT,SB) [owise] .
+
+    op json' : Module InsTraceStep Substitution -> String .
+    eq json'(M,(S ->^{(eq LAMBDA = RHO [ATS label(F)] .),SIGMA,P} T),SB) = 
+        "{ELP-DQtermELP-DQ:" + json(M,applySub(T,SB)) + 
+        ",ELP-DQsliceELP-DQ:" + json(M,T) + 
+        ",ELP-DQrelevELP-DQ:" + string(if ((F == 'flattening) or-else (F == 'unflattening)) then false else isRelevant(getSubTerm(S,P)) fi) + 
+        ",ELP-DQruleELP-DQ:" + json(M,(eq LAMBDA = RHO [ATS label(F)] .)) + 
+        ",ELP-DQposELP-DQ:ELP-DQ" + json(P) + 
+        "ELP-DQ,ELP-DQsubELP-DQ:[" + json(M,refinePartialSub(SIGMA,SB)) + 
+        "],ELP-DQcondELP-DQ:[]}" .
+    eq json'(M,(S ->^{(rl LAMBDA => RHO [ATS label(F)] .),SIGMA,P} T),SB) = 
+        "{ELP-DQtermELP-DQ:" + json(M,applySub(T,SB)) + 
+        ",ELP-DQsliceELP-DQ:" + json(M,T) + 
+        ",ELP-DQrelevELP-DQ:" + string(isRelevant(getSubTerm(S,P))) + 
+        ",ELP-DQruleELP-DQ:" + json(M,(rl LAMBDA => RHO [ATS label(F)] .)) + 
+        ",ELP-DQposELP-DQ:ELP-DQ" + json(P) + 
+        "ELP-DQ,ELP-DQsubELP-DQ:[" + json(M,refinePartialSub(SIGMA,SB)) + 
+        "],ELP-DQcondELP-DQ:[]}" .
+    eq json'(M,(S ->^{(ceq LAMBDA = RHO if COND [ATS label(F)] .),SIGMA,P} T),SB) = 
+        "{ELP-DQtermELP-DQ:" + json(M,applySub(T,SB)) + 
+        ",ELP-DQsliceELP-DQ:" + json(M,T) + 
+        ",ELP-DQrelevELP-DQ:" + string(isRelevant(getSubTerm(S,P))) + 
+        ",ELP-DQruleELP-DQ:" + json(M,(ceq LAMBDA = RHO if COND [ATS label(F)] .)) + 
+        ",ELP-DQposELP-DQ:ELP-DQ" + json(P) + 
+        "ELP-DQ,ELP-DQsubELP-DQ:[" + json(M,refinePartialSub(SIGMA,SB)) + 
+        "],ELP-DQcondELP-DQ:[" + json(M,applySub2Cond(COND,SIGMA)) + "]}" .
+    eq json'(M,(S ->^{(crl LAMBDA => RHO if COND [ATS label(F)] .),SIGMA,P} T),SB) = 
+        "{ELP-DQtermELP-DQ:" + json(M,applySub(T,SB)) + 
+        ",ELP-DQsliceELP-DQ:" + json(M,T) + 
+        ",ELP-DQrelevELP-DQ:" + string(isRelevant(getSubTerm(S,P))) + 
+        ",ELP-DQruleELP-DQ:" + json(M,(crl LAMBDA => RHO if COND [ATS label(F)] .)) + 
+        ",ELP-DQposELP-DQ:ELP-DQ" + json(P) + 
+        "ELP-DQ,ELP-DQsubELP-DQ:[" + json(M,refinePartialSub(SIGMA,SB)) + 
+        "],ELP-DQcondELP-DQ:[" + json(M,applySub2Cond(COND,SIGMA)) + "]}" .
+
+    op json : Module ProgramSlice -> String .
+    eq json(M,[ O* : E* : R* : C* : A* ]) = ",ELP-DQprogramELP-DQ:{ELP-DQopsELP-DQ:[" + json(O*) + "],ELP-DQeqsELP-DQ:[" + json(E*) +
+        "],ELP-DQrlsELP-DQ:[" + json(R*) + "],ELP-DQclssELP-DQ:[" + json(C*) + "],ELP-DQattrsELP-DQ:[" + "" + "]}" .
+
+    op json : AttrSet Bool -> String .
+    eq json((none).AttrSet,true) = "" .
+    eq json((none).AttrSet,false) = "[none]" .
+    eq json(label(F),true) = "" .
+    eq json(ATS,B) = "[" + json'(ATS,B) + "]" [owise] .
+
+    op json' : AttrSet Bool -> String .
+    eq json'(owise none,B) = "owise" .
+    eq json'(nonexec none,B) = "nonexec" .
+    eq json'(variant none,B) = "variant" .
+    eq json'(metadata(STR) none,true) = "metadata ELP-EDQ" + STR + "ELP-EDQ" .
+    eq json'(metadata(STR) none,false) = "metadata(ELP-EDQ" + STR + "ELP-EDQ)" .
+    eq json'(label(F) none,true) = "" .
+    eq json'(label(F) none,false) = "label('" + string(F) + ")" .
+    eq json'(print(nil) none,true) = "print" .
+    eq json'(print(FL) none,true) = "print " + json(FL,true).
+    eq json'(print(FL) none,false) = "print(" + json(FL,false) + ")" .
+
+    eq json'(owise ATS,B) = "owise " + json'(ATS,B) [owise] .
+    eq json'(nonexec ATS,B) = "nonexec " + json'(ATS,B) [owise] .
+    eq json'(variant ATS,B) = "variant " + json'(ATS,B) [owise] .
+    eq json'(metadata(STR) ATS,true) = "metadata ELP-EDQ" + STR + "ELP-EDQ " + json'(ATS,true) [owise] .
+    eq json'(metadata(STR) ATS,false) = "metadata(ELP-EDQ" + STR + "ELP-EDQ) " + json'(ATS,false) [owise] .
+    eq json'(label(F) ATS,true) = json'(ATS,true) [owise] .
+    eq json'(label(F) ATS,false) = "label('" + string(F) + ") " + json'(ATS,false) [owise] .
+    eq json'(print(FL) ATS,true) = "print" + json'(ATS,true) [owise] .
+    eq json'(print(FL) ATS,false) = "print(" + json(FL,false) + ") " + json'(ATS,false) [owise] .
+
+    op json : EquationSet -> String .
+    eq json((none).EquationSet) = "" .
+    eq json((eq LAMBDA = RHO [ATS label(F)] .) E*) = if (E* == none) then "{ELP-DQvalELP-DQ:ELP-DQ" + string(F) + "ELP-DQ}" else "{ELP-DQvalELP-DQ:ELP-DQ" + string(F) + "ELP-DQ}," + json(E*) fi .
+    eq json((ceq LAMBDA = RHO if COND [ATS label(F)] .) E*) = if (E* == none) then "{ELP-DQvalELP-DQ:ELP-DQ" + string(F) + "ELP-DQ}" else "{ELP-DQvalELP-DQ:ELP-DQ" + string(F) + "ELP-DQ}," + json(E*) fi .
+
+    op json : RuleSet -> String .
+    eq json((none).RuleSet) = "" .
+    eq json((rl LAMBDA => RHO [ATS label(F)] .) R*) = if (R* == none) then "{ELP-DQvalELP-DQ:ELP-DQ" + string(F) + "ELP-DQ}" else "{ELP-DQvalELP-DQ:ELP-DQ" + string(F) + "ELP-DQ}," + json(R*) fi .
+    eq json((crl LAMBDA => RHO if COND [ATS label(F)] .) R*) = if (R* == none) then "{ELP-DQvalELP-DQ:ELP-DQ" + string(F) + "ELP-DQ}" else "{ELP-DQvalELP-DQ:ELP-DQ" + string(F) + "ELP-DQ}," + json(R*) fi .
+
+    op json : Module Equation -> String .
+    eq json(M,(eq 'if_then_else_fi['true.Bool,T:Term,T':Term] = T:Term [ATS label('builtIn)] .)) = "{ELP-DQlabelELP-DQ:ELP-DQbuiltInELP-DQ,ELP-DQsourceELP-DQ:ELP-DQeq [builtIn] : if true then " + metaString(M,T,true) + " else " + metaString(M,T',true) + " fi = " + metaString(M,T,true) + " " + json(ATS label('builtIn),true) + " .ELP-DQ,ELP-DQmetaELP-DQ:ELP-DQeq " + metaString(M,'if_then_else_fi['true.Bool,T:Term,T':Term],false) + " = " + metaString(M,T:Term,false) + " " + json(ATS label('builtIn),false) + " .ELP-DQ,ELP-DQtypeELP-DQ:ELP-DQbuiltInELP-DQ}" .
+    eq json(M,(eq 'if_then_else_fi['false.Bool,T:Term,T':Term] = T':Term [ATS label('builtIn)] .)) = "{ELP-DQlabelELP-DQ:ELP-DQbuiltInELP-DQ,ELP-DQsourceELP-DQ:ELP-DQeq [builtIn] : if false then " + metaString(M,T,true) + " else " + metaString(M,T',true) + " fi = " + metaString(M,T',true) + " " + json(ATS label('builtIn),true) + " .ELP-DQ,ELP-DQmetaELP-DQ:ELP-DQeq " + metaString(M,'if_then_else_fi['false.Bool,T:Term,T':Term],false) + " = " + metaString(M,T':Term,false) + " " + json(ATS label('builtIn),false) + " .ELP-DQ,ELP-DQtypeELP-DQ:ELP-DQbuiltInELP-DQ}" .
+    eq json(M,(eq LAMBDA = RHO [ATS label('builtIn)] .)) = "{ELP-DQlabelELP-DQ:ELP-DQbuiltInELP-DQ,ELP-DQsourceELP-DQ:ELP-DQeq [builtIn] : " + metaString(M,LAMBDA,true) + " = " + metaString(M,RHO,true) + " " + json(ATS label('builtIn),true) + " .ELP-DQ,ELP-DQmetaELP-DQ:ELP-DQeq " + metaString(M,LAMBDA,false) + " = " + metaString(M,RHO,false) + " " + json(ATS label('builtIn),false) + " .ELP-DQ,ELP-DQtypeELP-DQ:ELP-DQbuiltInELP-DQ}" .
+    eq json(M,(eq LAMBDA = RHO [ATS label('flattening)] .)) = "{ELP-DQlabelELP-DQ:ELP-DQflatteningELP-DQ,ELP-DQsourceELP-DQ:ELP-DQeq [flattening] : " + metaString(M,LAMBDA,true) + " = " + metaString(M,RHO,true) + " " + json(ATS label('flattening),true) + " .ELP-DQ,ELP-DQmetaELP-DQ:ELP-DQeq " + metaString(M,LAMBDA,false) + " = " + metaString(M,RHO,false) + " " + json(ATS label('flattening),false) + " .ELP-DQ,ELP-DQtypeELP-DQ:ELP-DQbuiltInELP-DQ}" .
+    eq json(M,(eq LAMBDA = RHO [ATS label('unflattening)] .)) = "{ELP-DQlabelELP-DQ:ELP-DQunflatteningELP-DQ,ELP-DQsourceELP-DQ:ELP-DQeq [unflattening] : " + metaString(M,LAMBDA,true) + " = " + metaString(M,RHO,true) + " " + json(ATS label('unflattening),true) + " .ELP-DQ,ELP-DQmetaELP-DQ:ELP-DQeq " + metaString(M,LAMBDA,false) + " = " + metaString(M,RHO,false) + " " + json(ATS label('unflattening),false) + " .ELP-DQ,ELP-DQtypeELP-DQ:ELP-DQbuiltInELP-DQ}" .
+    eq json(M,(eq LAMBDA = RHO [ATS label(F)] .)) = "{ELP-DQlabelELP-DQ:ELP-DQ" + string(F) + "ELP-DQ,ELP-DQsourceELP-DQ:ELP-DQeq [" + string(F) + "] : " + metaString(M,LAMBDA,true) + " = " + metaString(M,RHO,true) + " " + json(ATS label(F),true) + " .ELP-DQ,ELP-DQmetaELP-DQ:ELP-DQeq " + metaString(M,LAMBDA,false) + " = " + metaString(M,RHO,false) + " " + json(ATS label(F),false) + " .ELP-DQ,ELP-DQtypeELP-DQ:ELP-DQequationELP-DQ}" [owise] .
+    eq json(M,(ceq LAMBDA = RHO if COND [ATS label(F)] .)) = "{ELP-DQlabelELP-DQ:ELP-DQ" + string(F) + "ELP-DQ,ELP-DQsourceELP-DQ:ELP-DQceq [" + string(F) + "] : " + metaString(M,LAMBDA,true) + " = " + metaString(M,RHO,true) + " if " + toString(M,COND,true) + json(ATS label(F),true) + " .ELP-DQ,ELP-DQmetaELP-DQ:ELP-DQceq " + metaString(M,LAMBDA,false) + " = " + metaString(M,RHO,false) + " if " + toString(M,COND,false) + " " + json(ATS label(F),false) + " .ELP-DQ,ELP-DQtypeELP-DQ:ELP-DQequationELP-DQ}" .
+
+    op json : Module Rule -> String .
+    eq json(M,(rl LAMBDA => RHO [ATS label(F)] .)) = "{ELP-DQlabelELP-DQ:ELP-DQ" + string(F) + "ELP-DQ,ELP-DQsourceELP-DQ:ELP-DQrl [" + string(F) + "] : " + metaString(M,LAMBDA,true) + " => " + metaString(M,RHO,true) + json(ATS label(F),true) + " .ELP-DQ,ELP-DQmetaELP-DQ:ELP-DQrl " + metaString(M,LAMBDA,false) + " => " + metaString(M,RHO,false) + " " + json(ATS label(F),false) + " .ELP-DQ,ELP-DQtypeELP-DQ:ELP-DQruleELP-DQ}" .
+    eq json(M,(crl LAMBDA => RHO if COND [ATS label(F)] .)) = "{ELP-DQlabelELP-DQ:ELP-DQ" + string(F) + "ELP-DQ,ELP-DQsourceELP-DQ:ELP-DQcrl [" + string(F) + "] : " + metaString(M,LAMBDA,true) + " => " + metaString(M,RHO,true) + " if " + toString(M,COND,true) + json(ATS label(F),true) + " .ELP-DQ,ELP-DQmetaELP-DQ:ELP-DQcrl " + metaString(M,LAMBDA,false) + " => " + metaString(M,RHO,false) + " if " + toString(M,COND,false) + " " + json(ATS label(F),false) + " .ELP-DQ,ELP-DQtypeELP-DQ:ELP-DQruleELP-DQ}" .
+
+    op json : Module Substitution -> String .
+    eq json(M,(none).Substitution) = "" .
+    eq json(M,(V <- T)) = "{ELP-DQvrELP-DQ:{ELP-DQsourceELP-DQ:ELP-DQ" + metaString(M,V,true) + "ELP-DQ,ELP-DQmetaELP-DQ:ELP-DQ" + metaString(M,V,false) + "ELP-DQ},ELP-DQvlELP-DQ:{ELP-DQsourceELP-DQ:ELP-DQ" + metaString(M,T,true) + "ELP-DQ,ELP-DQmetaELP-DQ:ELP-DQ" + metaString(M,T,false) + "ELP-DQ}}" .
+    eq json(M,(V <- T) ; none) = "{ELP-DQvrELP-DQ:{ELP-DQsourceELP-DQ:ELP-DQ" + metaString(M,V,true) + "ELP-DQ,ELP-DQmetaELP-DQ:ELP-DQ" + metaString(M,V,false) + "ELP-DQ},ELP-DQvlELP-DQ:{ELP-DQsourceELP-DQ:ELP-DQ" + metaString(M,T,true) + "ELP-DQ,ELP-DQmetaELP-DQ:ELP-DQ" + metaString(M,T,false) + "ELP-DQ}}" .
+    eq json(M,(V <- T) ; SB) = "{ELP-DQvrELP-DQ:{ELP-DQsourceELP-DQ:ELP-DQ" + metaString(M,V,true) + "ELP-DQ,ELP-DQmetaELP-DQ:ELP-DQ" + metaString(M,V,false) + "ELP-DQ},ELP-DQvlELP-DQ:{ELP-DQsourceELP-DQ:ELP-DQ" + metaString(M,T,true) + "ELP-DQ,ELP-DQmetaELP-DQ:ELP-DQ" + metaString(M,T,false) + "ELP-DQ}}," + json(M,SB) [owise] .
+
+    op json : Module Condition -> String .
+    eq json(M,(nil).Condition) = "{}" .
+    eq json(M,(T : SO)) = "{ELP-DQlhsELP-DQ:ELP-DQ" + metaString(M,T,true) + "ELP-DQ,ELP-DQrhsELP-DQ:ELP-DQ" + string(SO) + "ELP-DQ,ELP-DQlhsmetaELP-DQ:ELP-DQ" + metaString(M,T,false) + "ELP-DQ,ELP-DQrhsmetaELP-DQ:ELP-DQ" + metaString(M,SO,false) + "ELP-DQ,ELP-DQtypeELP-DQ:ELP-DQmembershipELP-DQ}" .
+    eq json(M,(S = T)) = "{ELP-DQlhsELP-DQ:ELP-DQ" + metaString(M,S,true) + "ELP-DQ,ELP-DQrhsELP-DQ:ELP-DQ" + metaString(M,T,true) + "ELP-DQ,ELP-DQlhsmetaELP-DQ:ELP-DQ" + metaString(M,S,false) + "ELP-DQ,ELP-DQrhsmetaELP-DQ:ELP-DQ" + metaString(M,T,false) + "ELP-DQ,ELP-DQtypeELP-DQ:ELP-DQequationalELP-DQ}" .
+    eq json(M,(T := S)) = "{ELP-DQlhsELP-DQ:ELP-DQ" + metaString(M,T,true) + "ELP-DQ,ELP-DQrhsELP-DQ:ELP-DQ" + metaString(M,S,true) + "ELP-DQ,ELP-DQlhsmetaELP-DQ:ELP-DQ" + metaString(M,T,false) + "ELP-DQ,ELP-DQrhsmetaELP-DQ:ELP-DQ" + metaString(M,S,false) + "ELP-DQ,ELP-DQtypeELP-DQ:ELP-DQmatchingELP-DQ}" .
+    eq json(M,(S => T)) = "{ELP-DQlhsELP-DQ:ELP-DQ" + metaString(M,S,true) + "ELP-DQ,ELP-DQrhsELP-DQ:ELP-DQ" + metaString(M,T,true) + "ELP-DQ,ELP-DQlhsmetaELP-DQ:ELP-DQ" + metaString(M,S,false) + "ELP-DQ,ELP-DQrhsmetaELP-DQ:ELP-DQ" + metaString(M,T,false) + "ELP-DQ,ELP-DQtypeELP-DQ:ELP-DQrewriteELP-DQ}" .
+    eq json(M,COND /\ COND') = if (COND' == nil) then json(M,COND) else json(M,COND) + "," + json(M,COND') fi [owise] .
+
+    op json : QueryResult -> String .
+    eq json((nil).QueryResult) = "" .
+    eq json((N :: SP) QR) = 
+        if (QR == nil)
+        then "{ELP-DQstateELP-DQ:" + string(N,10) + ",ELP-DQposELP-DQ:ELP-DQ" + json(SP) + "ELP-DQ}"
+        else "{ELP-DQstateELP-DQ:" + string(N,10) + ",ELP-DQposELP-DQ:ELP-DQ" + json(SP) + "ELP-DQ}," + json(QR)
+        fi [owise] .
+
+    op json : Module FixedResult OpDeclSet -> String .
+    eq json(M,fix[ sat : noFix ],OPDS) = "ELP-DQresultELP-DQ:ELP-DQsatELP-DQ" .
+    eq json(M,fix[ sat(N) : noFix ],OPDS) = "ELP-DQresultELP-DQ:ELP-DQsatELP-DQ,ELP-DQdepthELP-DQ:" + string(N,10) .
+    eq json(M,fix[ unsat(T,T*,ASR,SOL,SB,P,ATOM) : notSupported ],OPDS) = "ELP-DQresultELP-DQ:ELP-DQunsatELP-DQ,ELP-DQfixELP-DQ:ELP-DQnotSupportedELP-DQ,ELP-DQassertionELP-DQ:" + json(M,ASR,SB) + ",ELP-DQtermELP-DQ:" + json(M,T) + ",ELP-DQsliceELP-DQ:" + json(M,T*) + ",ELP-DQopsELP-DQ:[" + json(OPDS) + "]" .
+    eq json(M,fix[ unsat(T,T*,ASR,SOL,SB,P,ATOM) : noFix ],OPDS) = "ELP-DQresultELP-DQ:ELP-DQunsatELP-DQ,ELP-DQassertionELP-DQ:" + json(M,ASR,SB) + ",ELP-DQtermELP-DQ:" + json(M,T) + ",ELP-DQsliceELP-DQ:" + json(M,T*) + ",ELP-DQopsELP-DQ:[" + json(OPDS) + "]" .
+    eq json(M,fix[ unsat(IT,TS*,ASR,SOL,SB,P,ATOM) : notSupported ],OPDS) = "ELP-DQresultELP-DQ:ELP-DQunsatELP-DQ,ELP-DQfixELP-DQ:ELP-DQnotSupportedELP-DQ,ELP-DQassertionELP-DQ:" + json(M,ASR,SB) + ",ELP-DQtermELP-DQ:" + json(M,getFirstTerm(IT)) + ",ELP-DQttraceELP-DQ:[" + json(M,IT) + "],ELP-DQsliceELP-DQ:" + json(M,getFirstTerm(TS*)) + ",ELP-DQstraceELP-DQ:[" + json(M,IT,TS*) + "]" + json(M,prgSlicing(M,OPDS,IT,TS*)) .
+    eq json(M,fix[ unsat(IT,TS*,ASR,SOL,SB,P,ATOM) : noFix ],OPDS) = "ELP-DQresultELP-DQ:ELP-DQunsatELP-DQ,ELP-DQassertionELP-DQ:" + json(M,ASR,SB) + ",ELP-DQtermELP-DQ:" + json(M,getFirstTerm(IT)) + ",ELP-DQttraceELP-DQ:[" + json(M,IT) + "],ELP-DQsliceELP-DQ:" + json(M,getFirstTerm(TS*)) + ",ELP-DQstraceELP-DQ:[" + json(M,IT,TS*) + "]" + json(M,prgSlicing(M,OPDS,IT,TS*)) .
+    eq json(M,fix[ unsat(IT,TS*,ASR,SOL,SB,P,ATOM) : FIX ],OPDS) = "ELP-DQresultELP-DQ:ELP-DQunsatELP-DQ,ELP-DQfixELP-DQ:" + json(M,FIX) + ",ELP-DQassertionELP-DQ:" + json(M,ASR,SB) + ",ELP-DQtermELP-DQ:" + json(M,getFirstTerm(IT)) + ",ELP-DQttraceELP-DQ:[" + json(M,IT) + "],ELP-DQsliceELP-DQ:" + json(M,getFirstTerm(TS*)) + ",ELP-DQstraceELP-DQ:[" + json(M,IT,TS*) + "]" + json(M,prgSlicing(M,OPDS,IT,TS*)) [owise] .
+
+    op json : Module fAssertion Substitution -> String .
+    eq json(M,fun(PAT,FORM,PAT',FORM'),SB) = "{ELP-DQsourceELP-DQ:ELP-DQ" + metaString(M,PAT,true) + " { " + metaString(M,FORM,true) + " } -> " + metaString(M,PAT',true) + " { " + metaString(M,FORM',true) + 
+        " }ELP-DQ,ELP-DQmetaELP-DQ:ELP-DQ'_{_}->_{_}[" + metaString(M,PAT,false) + "," + metaString(M,FORM,false) + "," + metaString(M,PAT',false) + "," + metaString(M,FORM',false) + "]ELP-DQ,ELP-DQtypeELP-DQ:ELP-DQfunELP-DQ,ELP-DQsubinELP-DQ:[" + json(M,SB) + "],ELP-DQsuboutELP-DQ:[" + json(M,reduceSub(M,SB)) + "]}" .
+
+    op json : Module sAssertion Substitution -> String .
+    eq json(M,sys(PAT,FORM),SB) = "{ELP-DQsourceELP-DQ:ELP-DQ" + metaString(M,PAT,true) + " { " + metaString(M,FORM,true) + 
+        " }ELP-DQ,ELP-DQmetaELP-DQ:ELP-DQ'_{_}[" + metaString(M,PAT,false) + "," + metaString(M,FORM,false) + "]ELP-DQ,ELP-DQtypeELP-DQ:ELP-DQsysELP-DQ,ELP-DQsubELP-DQ:[" + json(M,SB) + "]}" .
+endm

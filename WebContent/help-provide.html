@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<!-- 
+Copyright 2014 Extensions of Logic Programming - Universitat Politècnica de València
+
+Permission is hereby granted, free of charge, to any person obtaining a copy of 
+this software and associated documentation files (the "Software"), to deal in 
+the Software without restriction, including without limitation the rights to use, 
+copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the 
+Software, and to permit persons to whom the Software is furnished to do so, 
+subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all 
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, 
+INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A 
+PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT 
+HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION 
+OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE 
+SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+ -->
+ 
+<html>
+<head>
+	<title>Anima Online Stepper Help</title>
+	<meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+	<link rel="icon" type="image/x-icon" href="./img/favicon.ico">
+	<link href="css/bootstrap.css" rel="stylesheet" media="screen,print">
+    <link href="css/bootstrap-select.css" rel="stylesheet" media="screen,print">
+    <link href="css/anima.css" rel="stylesheet" media="screen,print">
+    
+    <script type="text/javascript" charset="utf-8" src="js/jquery.min.js"></script>
+    <script type="text/javascript" charset="utf-8" src="js/jquery-ui.min.js"></script>
+	<script type="text/javascript" charset="utf-8" src="js/bootstrap.min.js"></script>
+	<script type="text/javascript" charset="utf-8" src="js/help.js"></script>
+</head>
+
+<body style="background-color: #505050;">
+    	<br>
+    	<div class="panel panel-primary animaPanel" style="margin: 0 auto; width: 900px;">
+        	<div class="panel-heading animaPanelHeading">
+          		<h3 class="panel-title animaPanelTitle">Anima Online Stepper Help</h3>
+        	</div>
+        	<div class="panel-body" style="background-color: #f0f0f0;">
+        		<br>
+         		<img src="img/help1.png" alt="Anima Online Stepper" style="display: block; margin: auto;">
+				<br>
+				<h3 class="helpHeader">Help (<span style="color: red; font-weight: bold;">A</span>)</h3>
+				<p class="justified helpText">Shows this window.</p>
+				<p></p>
+				<h3 class="helpHeader">Example selector (<span style="color: red; font-weight: bold;">B</span>)</h3>
+				<p class="justified helpText">By using this control, you can either enter a new Maude program or select one of program examples that <span class="animaLogo">Anima</span> offers for demonstration purposes. Note that examples that are marked with an asterisk include errors on purpose in order to debug them.</p>
+				<dl class="helpText">
+					<dd class="bulleted"><span class="bulletedLink" onclick="showExample(EX_BANK)">Bank Model*</span></dd>
+					<dd class="bulleted"><span class="bulletedLink" onclick="showExample(EX_BLOCKS)">Blocks World*</span></dd>
+					<dd class="bulleted"><span class="bulleted">Bounded Retransmission Protocol</span></dd>
+                    <dd class="bulleted"><span class="bulleted">Container Terminal</span></dd>
+                    <dd class="bulleted"><span class="bulleted">Crossing-River</span></dd>
+                    <dd class="bulleted"><span class="bulleted">Dekker's Algorithm</span></dd>
+					<dd class="bulleted"><span class="bulletedLink" onclick="showExample(EX_PROTOCOL)">Fault-tolerant Protocol*</span></dd>
+					<dd class="bulleted"><span class="bulleted">Fibonacci</span></dd>
+					<dd class="bulleted"><span class="bulletedLink" onclick="showExample(EX_NPA)">Maude-NPA</span></dd>
+					<dd class="bulleted"><span class="bulletedLink" onclick="showExample(EX_MAZE)">Maze (with collision)</span></dd>
+					<dd class="bulleted"><span class="bulleted">MinMax</span></dd>
+					<dd class="bulleted"><span class="bulleted">Philosophers</span></dd>
+					<dd class="bulleted"><span class="bulleted">Protein</span></dd>
+                    <dd class="bulleted"><span class="bulleted">Rent-a-car*</span></dd>
+                    <dd class="bulleted"><span class="bulleted">Semaphore</span></dd>
+                    <dd class="bulleted"><span class="bulleted">Stock Exchange*</span></dd>
+                    <dd class="bulleted"><span class="bulleted">Stock Exchange (OO)*</span></dd>
+					<dd class="bulleted"><span class="bulletedLink" onclick="showExample(EX_WEBMAIL)">Webmail Application</span></dd>
+					<dd class="bulleted"><span class="bulleted">Wolfram Rule 30</span></dd>
+				</dl>
+				<p></p>
+				<h3 class="helpHeader">File Upload (<span style="color: red; font-weight: bold;">C</span>)</h3>
+				<p class="justified helpText">You can select a local file containing the source specification in two different ways:</p>
+				<dl class="helpText">
+					<dt><span class="glyphicon glyphicon-hand-right"></span>&nbsp;&nbsp;By uploading a single text file with the <span style="color: red;"><i>maude</i></span> extension</dt>
+					<dd>Use this option to provide a single text file (with the <i>maude</i> extension) that contains the desired Maude program. Maude commands such as set, load, reduce, rewrite, etc. must be avoided 
+					and will be searched for. If detected, the specification will be considered invalid and an error alert will be displayed.
+					</dd>
+					
+					<dt><br><span class="glyphicon glyphicon-hand-right"></span>&nbsp;&nbsp;By uploading a compressed file with the <span style="color: red;"><i>zip</i></span> extension</dt>
+					<dd>A Maude program may consist in a number of modules interrelated via includes, which are usually contained in different files.
+					However, when a given module A requires (via including) another module B, B must be already loaded in the system, therefore a precise order in which these files must be loaded has to be determined. 
+					This order is generally specified by the user by providing the necessary arguments upon executing the Maude system or by means of the load Maude command, once the interpreter is launched. 
+					In order to satisfy this, <span class="animaLogo">Anima</span> requires the provided compressed file to comply with the following conditions:
+					<dl class="helpText">
+						<dd class="bulleted"><span class="bulleted">Must be a ZIP compressed file (with the <i>zip</i> extension).</span></dd>
+						<dd class="bulleted"><span class="bulleted">Must contain one or several text files (with the <i>maude</i> extension). Additional files are simply ignored.</span></dd>
+						<dd class="bulleted"><span class="bulleted">The contained <i>maude</i> files must hold at least all the necessary modules for the Maude specification to load properly. There is no restriction on adding non-included additional modules or files, since they will also be ignored.</span></dd>
+						<dd class="bulleted"><span class="bulleted">No required <i>maude</i> file should contain any Maude command (e.g., load, reduce, rewrite, etc.), otherwise the file will be considered invalid and therefore also the entire <i>zip</i> file. </span></dd>
+						<dd class="bulleted"><span class="bulleted">A text file named <b>order.anima</b> must be included in the <i>zip</i> file. This file will provide a sorted list of <i>maude</i> filenames in the precise order they need to be loaded for the specification to work, with each filename occupying a single line. Lines starting with the # character will not be readed and can be used to write comments. The following is an example of a valid <i>order.anima</i> file:</span>
+						<dl class="helpText">
+							<dd class="sourcecode">#sorted list of files to be loaded</dd>
+							<dd class="sourcecode">file1.maude</dd>
+							<dd class="sourcecode">file2.maude</dd>
+							<dd class="sourcecode">file3.maude</dd>
+							<dd class="sourcecode">file4.maude</dd>
+							<dd class="sourcecode">file5.maude</dd>
+						</dl></dd>
+						<dd class="bulleted"><span class="bulleted">Optionally, a file named <b>start.anima</b> can be included. If included, and the previous conditions are satisfied, the initial state text area will be automatically filled with the contents of this file.</span></dd>
+					</dl>
+					</dd>
+				</dl>
+				<p></p>
+				<h3 class="helpHeader">Maude Program (<span style="color: red; font-weight: bold;">D</span>)</h3>
+				<p class="justified helpText">This text area shows the current Maude specification loaded into the system, if any. Unless one of the predefined examples is loaded, the text area is editable so that the user may enter or edit it manually.</p>
+				<p></p>
+				<h3 class="helpHeader">Initial state representation selector(<span style="color: red; font-weight: bold;">E</span>)</h3>
+				<p class="justified helpText">Maude terms may be represented in either source or meta-level representation. This control must point to the correct representation in which the given initial state is specified, either source or meta level representation.</p>
+				<p></p>
+				<h3 class="helpHeader">Initial state (<span style="color: red; font-weight: bold;">F</span>)</h3>
+				<p class="justified helpText">In order to animate your program, you must enter here the input call (in the precise representation given by the previous selector).</p>
+				<p></p>
+				<h3 class="helpHeader">Go Back (<span style="color: red; font-weight: bold;">G</span>)</h3>
+				<p class="justified helpText">Shows the <span class="animaLogo">Anima</span> front page.</p>
+				<p></p>
+				<h3 class="helpHeader">Animate (<span style="color: red; font-weight: bold;">H</span>)</h3>
+				<p class="justified helpText">Click here to start animating your Maude program from the initial state.</p>
+				<p></p>
+        	</div>
+        	<div id="exampleWindow" class="modal fade" tabindex="-1" style="overflow: hidden;">
+    			<div class="modal-dialog" style="margin-top: 50px; width: 800px;">
+      				<div class="modal-content animaPanel" style="max-height: 750px;">
+        				<div id="exampleWindowTitle" class="modal-header">
+          					<button id="bCloseExampleWindow" type="button" class="close" data-dismiss="modal" style="opacity: initial; color: white;">&times;</button>
+          					<h4 id="spanExampleWindowTitle" class="modal-title" style="font-family: Georgia, 'Times New Roman', Times, serif;">Modal title</h4>
+        				</div>
+        				<div id="exampleWindowContent" class="modal-body" style="max-height: 700px;">
+        				</div>
+        			</div>
+    			</div>
+  			</div>
+      	</div>
+      	<br>
+</body>
+</html>

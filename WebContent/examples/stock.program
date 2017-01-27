@@ -1,0 +1,72 @@
+fmod STOCK-EXCHANGE-SORTS is
+    pr INT + QID . 
+  
+    sorts Trader Stock Id Order Market PremiumTrader TraderID OrderID StockID Set .
+    subsorts Qid < TraderID OrderID StockID < Id .
+    subsorts PremiumTrader < Trader .
+endfm
+
+view StockID from TRIV to STOCK-EXCHANGE-SORTS is
+    sort Elt to StockID .
+endv
+
+view Trader from TRIV to STOCK-EXCHANGE-SORTS is
+    sort Elt to Trader .
+endv
+
+view Order from TRIV to STOCK-EXCHANGE-SORTS is
+    sort Elt to Order .
+endv
+
+view Stock from TRIV to STOCK-EXCHANGE-SORTS is
+    sort Elt to Stock .
+endv
+
+mod RANDOMIZER is
+    pr RANDOM .
+
+    var X : Nat .
+    op rndDelta : Nat -> Nat .
+    eq [rnd-delta] : rndDelta(X) = random(X) rem 10 .
+    
+    op reSeed : Nat -> Nat .
+    eq [re-seed] : reSeed(X) = X + 3 .
+endm
+
+mod STOCK-EXCHANGE is 
+    pr STOCK-EXCHANGE-SORTS + RANDOMIZER .
+    pr SET{StockID} + SET{Trader} + SET{Order} + SET{Stock} .
+
+    --- Round StockSet TraderSet OrderSet
+    op _:_|_|_ : Nat Set{Stock} Set{Trader} Set{Order} -> Market [ctor] .
+    --- TraderID capital
+    op tr : TraderID Int -> Trader [ctor] .
+    --- StockID price
+    op st : StockID Int -> Stock [ctor] .
+    --- OrderID TraderID StockID limit profit-target stop-loss active
+    op ord : OrderID TraderID StockID Int Int Int Bool -> Order [ctor] .
+    --- Round Seed StockSet
+    op updP : Nat Nat Set{Stock} -> Set{Stock} .
+    
+    ops open closed : -> Bool .
+    
+    vars TID SID OID : Id .
+    var SS : Set{Stock} .
+    var TS : Set{Trader} .
+    var OS : Set{Order} .
+    var R S : Nat .
+    vars P C L PT SL : Int .
+
+    eq [updP] : updP(R,S,(st(SID,P),SS)) = if (rndDelta(R * S) rem 2) == 0 then st(SID,S + rndDelta(R * S)),updP(R,S + 1,SS) else st(SID,S + (- rndDelta(R * S))),updP(R,S + 1,SS) fi .
+    eq [updP-owise] : updP(R,S,empty) = empty [owise] . 
+
+    cmb [premT] : tr(TID,C) : PremiumTrader if TID in PreferredTraders .
+
+    op PreferredTraders : -> Set{StockID} .
+    eq [prefT] : PreferredTraders = 'T2 . 
+ 
+    rl [next-rnd] : R : SS | TS | OS => R + 1 : updP(R + 1,reSeed(R + 1),SS) | TS | OS .
+    crl [open-ord] : R : (st(SID,P),SS) | (tr(TID,C),TS) | (ord(OID,TID,SID,L,PT,SL,closed),OS) => R : (st(SID,P),SS) | (tr(TID,C - P),TS) | (ord(OID,TID,SID,L,PT,SL,open),OS) if P <= L .
+    crl [close-ord-SL] : R : (st(SID,P),SS) | (tr(TID,C),TS) | (ord(OID,TID,SID,L,PT,SL,open),OS) => R : (st(SID,P),SS) |  (tr(TID,C + L + (- SL)),TS) | OS if P <= L - SL .
+    crl [close-ord-PT] : R : (st(SID,P),SS) | (tr(TID,C),TS) | (ord(OID,TID,SID,L,PT,SL,open),OS) => R : (st(SID,P),SS) | (tr(TID,C + L + PT),TS) | OS if P >= L + PT .
+endm

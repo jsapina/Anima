@@ -1,0 +1,1 @@
+1 : (stock('S1,23), stock('S2,8)) | (trader('T1,10,10), trader('T2,20,22)) | (order('O1,'T2,'S1,10,6,4,open), order('O2,'T1,'S2,12,4,3,close))

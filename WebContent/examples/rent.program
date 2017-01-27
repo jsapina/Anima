@@ -1,0 +1,73 @@
+(omod RENT-A-CAR-ONLINE-STORE is
+  pr CONVERSION .
+  pr QID .
+  
+  subsort Qid < Oid .
+ 
+  class Register | rentals : Nat , date : Nat .
+  class Customer | credit : Int, suspended : Bool .
+  class Car | available : Bool, rate : Nat .
+  class Rental | deposit : Nat, dueDate : Nat, pickUpDate : Nat, customer : Oid, car : Oid .
+  class PreferredCustomer .
+  subclass PreferredCustomer < Customer .
+
+  class EconomyCar . 
+  class MidSizeCar . 
+  class FullSizeCar .
+  subclasses EconomyCar MidSizeCar FullSizeCar < Car .
+ 
+  vars U C R RG : Oid .
+  vars CREDIT AMNT : Int .
+  vars TODAY PDATE DDATE RATE DPST RNTLS : Nat .
+ 
+  rl [new-day] : < RG : Register | date : TODAY > 
+              => < RG : Register | date : TODAY + 1 > .
+ 
+  crl [3-day-rental] : 
+    < U : Customer | credit : CREDIT, suspended : false > 
+    < C : Car | available : true, rate : RATE > 
+    < RG : Register | rentals : RNTLS, date : TODAY > 
+    => 
+    < U : Customer | credit : CREDIT - AMNT > 
+    < C : Car | available : false > 
+    < RG : Register | rentals : RNTLS + 1 > 
+    < qid("R" + string(RNTLS,10)) : Rental | pickUpDate : TODAY, 
+      dueDate : TODAY + 3, car : C, deposit : AMNT, customer : U, 
+      rate : RATE >
+    if AMNT := 3 * RATE .
+ 
+  crl [on-date-return] : 
+    < U : Customer | credit : CREDIT > 
+    < C : Car | rate : RATE > 
+    < R : Rental | customer : U, car : C, pickUpDate : PDATE, 
+      dueDate : DDATE, deposit : DPST > 
+    < RG : Register | date : TODAY > 
+    => 
+    < U : Customer | credit : (CREDIT + DPST) - AMNT > 
+    < C : Car | available : true > 
+    < RG : Register | >
+    if (TODAY <= DDATE) /\ AMNT := RATE * (TODAY - PDATE) .
+ 
+  crl [late-return] : 
+    < U : Customer | credit : CREDIT > 
+    < C : Car | rate : RATE > 
+    < R : Rental | customer : U, car : C, pickUpDate : PDATE, 
+      dueDate : DDATE, deposit : DPST > 
+    < RG : Register | date : TODAY > 
+    => 
+    updateSuspension(< U : Customer | credit : (CREDIT - AMNT) + DPST >) 
+    < C : Car | available : true > 
+    < RG : Register | >
+    if DDATE < TODAY /\ AMNT := RATE * (DDATE - PDATE) + 
+        (120 * RATE * (TODAY - DDATE)) quo 100 .
+ 
+  op updateSuspension : Object -> Object .
+    ceq [suspend] : updateSuspension(
+        < U : Customer | credit : CREDIT , suspended : false >) = 
+        < U : Customer | credit : CREDIT , suspended : true > 
+      if (CREDIT < 0) .
+     
+     eq [maintainSuspension] : updateSuspension(
+       < U : Customer | suspended : B:Bool >) = 
+       < U : Customer | suspended : B:Bool > [owise] .
+endom)

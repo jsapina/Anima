@@ -1,0 +1,1 @@
+empty & clear(< 'A,0 >) & clear(< 'B,0 >) & ground(< 'A,0 >) & ground(< 'B,0 >)

@@ -1,0 +1,79 @@
+fmod STOCK-EXCHANGE-SORTS is
+    pr INT + QID . 
+  
+    sorts Trader Stock Id Order Market PremiumTrader TraderID OrderID StockID Set .
+    subsorts Qid < TraderID OrderID StockID < Id .
+    subsorts PremiumTrader < Trader .
+endfm
+
+view StockID from TRIV to STOCK-EXCHANGE-SORTS is
+    sort Elt to StockID .
+endv
+
+view Trader from TRIV to STOCK-EXCHANGE-SORTS is
+    sort Elt to Trader .
+endv
+
+view Order from TRIV to STOCK-EXCHANGE-SORTS is
+    sort Elt to Order .
+endv
+
+view Stock from TRIV to STOCK-EXCHANGE-SORTS is
+    sort Elt to Stock .
+endv
+
+mod RANDOMIZER is
+    pr RANDOM .
+
+    var X : Nat .
+    op rndDelta : Nat -> Nat .
+    eq [randomDelta] : rndDelta(X) = random(X) rem 10 .
+    
+    op m : -> Nat .
+    eq m = 3 .
+    
+    op reSeed : Nat -> Nat .
+    eq reSeed(X) = X + m .
+endm
+
+mod STOCK-EXCHANGE is 
+    pr STOCK-EXCHANGE-SORTS + RANDOMIZER .
+    pr SET{StockID} + SET{Trader} + SET{Order} + SET{Stock} .
+
+    op _:_|_|_ : Nat Set{Stock} Set{Trader} Set{Order} -> Market [ctor] .
+
+    --- TraderID capital equity
+    op trader : TraderID Int Int -> Trader [ctor] .
+    --- StockID price
+    op stock : StockID Int -> Stock [ctor] .
+    --- OrderID TraderID StockID limit profit-target stop-loss active
+    op order : OrderID TraderID StockID Int Int Int Bool -> Order [ctor] .
+
+    op updP : Nat Nat Set{Stock} -> Set{Stock} .
+    op updE : Set{Trader} Set{Stock} Set{Order} -> Set{Trader} .
+    
+    ops open close : -> Bool .
+    
+    vars TID SID OID : Id .
+    var SS : Set{Stock} .
+    var TS : Set{Trader} .
+    var OS : Set{Order} .
+    var R S : Nat .
+    vars P EQ C L PT SL : Int .
+
+    cmb trader(TID,C,EQ) : PremiumTrader if TID in PreferredTraders .
+
+    op PreferredTraders : -> Set{StockID} .
+    eq PreferredTraders = 'Bob,'Charlie . 
+ 
+    eq [updP] : updP(R,S,(stock(SID,P),SS)) = if (rndDelta(R * S) rem 2) == 0 then stock(SID,S + rndDelta(R * S)),updP(R,S + 1,SS) else stock(SID,S + (- rndDelta(R * S))),updP(R,S + 1,SS) fi .
+    eq [updP_Owise] : updP(R,S,empty) = empty [owise] . 
+
+    eq [updE] : updE((trader(TID,C,EQ),TS),(stock(SID,P),SS),(order(OID,TID,SID,L,PT,SL,open),OS)) = (trader(TID,C,EQ  + P + (- L)), updE(TS,(stock(SID,P),SS),(order(OID,TID,SID,L,PT,SL,open),OS))) .
+    eq [updE_Owise] : updE(TS,SS,OS) = TS [owise] .
+
+    rl [next-rnd] : R : SS | TS | OS => R + 1 : updP(R + 1,reSeed(R + 1),SS) | updE(TS,updP(R + 1,reSeed(R + 1),SS),OS) | OS .
+    crl [open-order] : R : (stock(SID,P),SS) | (trader(TID,C,EQ),TS) | (order(OID,TID,SID,L,PT,SL,close),OS) => R : (stock(SID,P),SS) | (trader(TID,C - P,EQ - P),TS) | (order(OID,TID,SID,L,PT,SL,open),OS) if P == L .
+    crl [close-order-SL] : R : (stock(SID,P),SS) | (trader(TID,C,EQ),TS) | (order(OID,TID,SID,L,PT,SL,open),OS) => R : (stock(SID,P),SS) |  (trader(TID,C + L + (- SL),EQ + L),TS) | OS if P <= L - SL .
+    crl [close-order-PT] : R : (stock(SID,P),SS) | (trader(TID,C,EQ),TS) | (order(OID,TID,SID,L,PT,SL,open),OS) => R : (stock(SID,P),SS) | (trader(TID,C + L + PT,EQ + L),TS) | OS if P >= L + PT .
+endm

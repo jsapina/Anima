@@ -1,0 +1,9 @@
+fmod FIBONACCI is
+    protecting NAT .
+    op fibo : Nat -> Nat .
+    
+    var N : Nat .
+    eq [EQ1] : fibo(0) = 0 .
+    eq [EQ2] : fibo(1) = 1 .
+    eq [EQ3] : fibo(s s N) = fibo(N) + fibo(s N) .
+endfm

@@ -1,0 +1,72 @@
+(omod TERMINAL is
+    pr QID .
+    subsort Qid < Oid .
+    
+    class Yard | currCapacity : Nat .
+    class Ship | maxCapacity : Nat, maxWeight : Nat, currCapacity : Nat, currWeight : Nat .
+    class Crane | holding : Bool, location : Oid .
+    class Container | weight : Nat, location : Oid .
+    class Truck | holding : Bool, location : Oid, drive : Bool .
+    
+    vars MC MW CC CW NW W : Nat .
+    vars YARD SHIP CONTAINER TRUCK CRANE CRANE' LOC LOC' : Oid .
+    vars HOLD HOLD' DRIVE : Bool .
+    
+    eq [driveTruck] :   < TRUCK : Truck | holding : true, location : CRANE, drive : true >
+                        < CRANE : Crane | holding : HOLD, location : LOC >
+                        < CRANE' : Crane | holding : HOLD', location : LOC' >
+                        =
+                        < TRUCK : Truck | location : CRANE', drive : false >
+                        < CRANE : Crane | >
+                        < CRANE' : Crane | > .
+                        
+    rl [load-truck] :   < TRUCK : Truck | holding : false, location : CRANE, drive : false > 
+                        < CRANE : Crane | holding : true, location : LOC >
+                        < CONTAINER : Container | location : CRANE >
+                        =>
+                        < TRUCK : Truck | holding : true, drive : true >
+                        < CRANE : Crane | holding : false >
+                        < CONTAINER : Container | location : TRUCK > .
+
+    rl [unload-truck] : < TRUCK : Truck | holding : true, location : CRANE, drive : false > 
+                        < CRANE : Crane | holding : false, location : LOC >
+                        < CONTAINER : Container | location : TRUCK >
+                        =>
+                        < TRUCK : Truck | holding : false, drive : true >
+                        < CRANE : Crane | holding : true >
+                        < CONTAINER : Container | location : CRANE > .
+
+    crl [load-ship] :   < SHIP : Ship | maxCapacity : MC , maxWeight : MW , currCapacity : CC , currWeight : CW >
+                        < CRANE : Crane | holding : true, location : SHIP >
+                        < CONTAINER : Container | weight : W , location : CRANE >
+                        =>
+                        < SHIP : Ship | currCapacity : (CC + 1) , currWeight : NW >
+                        < CRANE : Crane | holding : false >
+                        < CONTAINER : Container | location : SHIP >
+                        if (CC < MC) /\ (NW := (CW + W)) /\ (NW <= MW) .
+    
+    crl [unload-ship] : < SHIP : Ship | maxCapacity : MC , maxWeight : MW , currCapacity : CC , currWeight : CW >
+                        < CRANE : Crane | holding : false, location : SHIP >
+                        < CONTAINER : Container | weight : W , location : SHIP >
+                        =>
+                        < SHIP : Ship | currCapacity : sd(CC,1) , currWeight : NW >
+                        < CRANE : Crane | holding : true >
+                        < CONTAINER : Container | location : CRANE >
+                        if (NW := sd(CW,W)) .
+    
+    rl [store-yard] :   < YARD : Yard | currCapacity : CC > 
+                        < CRANE : Crane | holding : true, location : YARD >
+                        < CONTAINER : Container | location : CRANE >
+                        =>
+                        < YARD : Yard | currCapacity : CC + 1 >
+                        < CRANE : Crane | holding : false >
+                        < CONTAINER : Container | location : YARD > .
+
+    rl [unstore-yard] : < YARD : Yard | currCapacity : CC > 
+                        < CRANE : Crane | holding : false, location : YARD >
+                        < CONTAINER : Container | location : YARD >
+                        =>
+                        < YARD : Yard | currCapacity : sd(CC,1) >
+                        < CRANE : Crane | holding : true >
+                        < CONTAINER : Container | location : CRANE > .
+endom)
