@@ -1,4 +1,4 @@
-----                                         To be run on Maude 2.7 (alpha 106)
+----                                      To be run on Maude 2.7.1 (alpha 110b)
 ----                                                    author: Francisco Duran
 ----                           printSyntaxError functionality by Peter Olveczky
 ----                                       narrowing search by Santiago Escobar
@@ -10,7 +10,7 @@ set show advisories off .
 fmod BANNER is 
   pr STRING .
   op banner : -> String .
-  eq banner = "Full Maude 2.7 March 10th 2015" .
+  eq banner = "Full Maude 2.7.1 June 30th 2016" .
 endfm
 
 ***(
@@ -42,6 +42,8 @@ endfm
 
 ---- Main changes and bugs fixed:
 ----
+---- - May 19th, 2016
+----   - Adapted to the new syntax for variants in Alpha109
 ---- - Feb 4th, 2016
 ----   - The MOD-EXPRS module is renamed to FM-MOD-EXPRS, and a MOD-EXPRS is later 
 ----     introduced. Now, new module expressions can be used anywhere by redefining 
@@ -2744,14 +2746,14 @@ fmod VARIANT is
   eq X:Variant | X:Variant = X:Variant .
 
   op getTerms : VariantTripleSet -> TermSet .
-  eq getTerms({T:Term,S:Substitution,NextVar:Nat} 
+  eq getTerms({T:Term,S:Substitution,NextVar:Nat,Parent:Parent,B:Bool} 
               | R:VariantTripleSet)
    = T:Term | getTerms(R:VariantTripleSet) .
   eq getTerms((empty).VariantTripleSet)
    = emptyTermSet .
 
   op getSubstitutions : VariantTripleSet -> SubstitutionSet .
-  eq getSubstitutions({T:Term,S:Substitution,NextVar:Nat} 
+  eq getSubstitutions({T:Term,S:Substitution,NextVar:Nat,Parent:Parent,B:Bool} 
               | R:VariantTripleSet)
    = S:Substitution | getSubstitutions(R:VariantTripleSet) .
   eq getSubstitutions((empty).VariantTripleSet)
@@ -3344,7 +3346,7 @@ fmod VARIANT-HANDLING is
    = empty .
   eq toVariantTripleSet({T,S,S',NextVar} | VTS)
 ---    = {T,S ; S',NextVar} | toVariantTripleSet(VTS) .
-   = {T,S,NextVar} | toVariantTripleSet(VTS) .
+   = {T,S,NextVar,none,false} | toVariantTripleSet(VTS) . ---- ",none,false" added without much understanding
 
 endfm
 
@@ -3905,13 +3907,13 @@ fmod META-E-UNIFICATION is
      fi .
 
   op getVariants***$ : Module Term Nat VariantFourSet Nat Variant TermList -> VariantFourSet .
-  eq getVariants***$(M,T,NextVar,VTS,N,{T2:Term,S:Substitution,NV2:Nat},TL)
-   = getVariants***$$(M,T,NextVar,VTS,N,{T2:Term,S:Substitution,NV2:Nat},
+  eq getVariants***$(M,T,NextVar,VTS,N,{T2:Term,S:Substitution,NV2:Nat, P:Parent, B:Bool},TL)
+   = getVariants***$$(M,T,NextVar,VTS,N,{T2:Term,S:Substitution,NV2:Nat, P:Parent, B:Bool},
            split({S:Substitution,NV2:Nat},NextVar),TL) .
 
   op getVariants***$$ : Module Term Nat VariantFourSet Nat Variant UnificationTriple TermList -> VariantFourSet .
   eq getVariants***$$(M,T,NextVar,VTS,N,
-         {T2:Term,S:Substitution,NV2:Nat},
+         {T2:Term,S:Substitution,NV2:Nat, P:Parent, B:Bool},
          {S1:Substitution,S2:Substitution,NV2:Nat},TL)
    = getVariants***(M,T,NextVar,
              VTS | {T2:Term,S1:Substitution,S2:Substitution,NV2:Nat},
@@ -19839,32 +19841,28 @@ fmod MODULE-VARIANTS is
   eq getVariants#(M, M', T, narrowing) = makeVariantSet(getVariants(M, T, 1, irreducible ACUUnify minimal-unifiers)) .
   
   op makeVariantSet : VariantFourSet -> VariantTripleSet .
-  eq makeVariantSet({T, Subst, Subst', N} | VFS) = {T, Subst, N} | makeVariantSet(VFS) .
+  eq makeVariantSet({T, Subst, Subst', N} | VFS) = {T, Subst, N, none, false} | makeVariantSet(VFS) .
   eq makeVariantSet(empty) = empty .
   
----- PD: pre alpha96
-----  eq getVariants#(M, M', T, built-in) = getVariants#(M, T, 0) .
-----
-----  op getVariants# : Module Term Nat -> VariantTripleSet .  
-----  eq getVariants#(M, T, N) 
-----    = if metaGenerateVariant(M, T, 0, N) == noVariant
-----      then empty
-----      else metaGenerateVariant(M, T, 0, N), getVariants#(M, T, s N)
-----      fi .
-  
-  eq getRlVariants(M, ({'@<@_@>@[T], Subst, N} | VtS), T', nil, AtS)
-    = (rl getTerm(metaNormalize(M, T)) => getTerm(metaNormalize(M, _<<_(T', Subst))) [AtS] .)
+  eq getRlVariants(M, ({'@<@_@>@[T], Subst, N, P:Parent, B:Bool} | VtS), T', nil, AtS)
+    = (rl getTerm(metaNormalize(M, T)) 
+         => getTerm(metaNormalize(M, _<<_(T', Subst))) [AtS] .)
       getRlVariants(M, VtS, T', nil, AtS) .
-  eq getRlVariants(M, ({F[T, TL], Subst,N} | VtS), T', Cond, AtS)
-    = (crl getTerm(metaNormalize(M, T)) => getTerm(metaNormalize(M, _<<_(T', Subst))) if makeCond(TL, Cond, Subst) [AtS] .)
+  eq getRlVariants(M, ({F[T, TL], Subst, N, P:Parent, B:Bool} | VtS), T', Cond, AtS)
+    = (crl getTerm(metaNormalize(M, T)) 
+         => getTerm(metaNormalize(M, _<<_(T', Subst))) 
+         if makeCond(TL, Cond, Subst) [AtS] .)
       getRlVariants(M, VtS, T', Cond, AtS) .
   eq getRlVariants(M, empty, T', Cond, AtS) = none .
 
-  eq getEqVariants(M, ({'@<@_@>@[T], Subst, N} | VtS), T', nil, AtS)
-    = (eq getTerm(metaNormalize(M, T)) = getTerm(metaNormalize(M, _<<_(T', Subst))) [AtS] .)
+  eq getEqVariants(M, ({'@<@_@>@[T], Subst, N, P:Parent, B:Bool} | VtS), T', nil, AtS)
+    = (eq getTerm(metaNormalize(M, T)) 
+         = getTerm(metaNormalize(M, _<<_(T', Subst))) [AtS] .)
       getEqVariants(M, VtS, T', nil, AtS) .
-  eq getEqVariants(M, ({F[T, TL], Subst, N} | VtS), T', Cond, AtS)
-    = (ceq getTerm(metaNormalize(M, T)) = getTerm(metaNormalize(M, _<<_(T', Subst))) if makeCond(TL, Cond, Subst) [AtS] .)
+  eq getEqVariants(M, ({F[T, TL], Subst, N, P:Parent, B:Bool} | VtS), T', Cond, AtS)
+    = (ceq getTerm(metaNormalize(M, T)) 
+         = getTerm(metaNormalize(M, _<<_(T', Subst))) 
+         if makeCond(TL, Cond, Subst) [AtS] .)
       getEqVariants(M, VtS, T', Cond, AtS) .
   eq getEqVariants(M, empty, T', Cond, AtS) = none .
 
@@ -20034,8 +20032,8 @@ fmod MODULE-VARIANTS is
     = getVariants(M', T, getSubst(getSubstitutions(M', vars(T), getOps(M'), 0))) .
 
   eq getVariants(M, T, Subst | SubstS)
-    = {getTerm(metaNormalize(M, T << Subst)), Subst, 0} | getVariants(M, T, SubstS) .
-  eq getVariants(M, T, empty) = {T, none, 0} .
+    = {getTerm(metaNormalize(M, T << Subst)), Subst, 0, none, false} | getVariants(M, T, SubstS) .
+  eq getVariants(M, T, empty) = {T, none, 0, none, false} .
   
   eq getSubstitutions(M, V ; VS, ODS, N)
     = < combineSubsts(
@@ -21032,6 +21030,6 @@ loop init .
 
 trace exclude FULL-MAUDE .
 
----- set show loop stats on .
----- set show loop timing on .
----- set show advisories on .
+--- set show loop stats on .
+--- set show loop timing on .
+--- set show advisories on .
