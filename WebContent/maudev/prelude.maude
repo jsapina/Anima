@@ -2,7 +2,7 @@
 
     This file is part of the Maude 2 interpreter.
 
-    Copyright 1997-2014 SRI International, Menlo Park, CA 94025, USA.
+    Copyright 1997-2016 SRI International, Menlo Park, CA 94025, USA.
 
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -21,16 +21,16 @@
 )
 
 ***
-***	Maude interpreter standard prelude.
-***	Version alpha109
+***    Maude interpreter standard prelude.
+***    Version alpha 111a
 ***
-***	Some of the overall structure is taken from the OBJ3
-***	interpreter standard prelude.
+***    Some of the overall structure is taken from the OBJ3
+***    interpreter standard prelude.
 ***
 
 ***     *****************************************************
 ***     Mau-Dev extended prelude.
-***     Version 2.7.1
+***     Version 2.7.1a
 ***
 ***     safe-tools.dsic.upv.es/maudev
 ***     *****************************************************
@@ -1969,7 +1969,8 @@ fmod META-LEVEL is
 
 *** success results
   sorts ResultPair ResultTriple Result4Tuple MatchPair TraceStep Trace
-    UnificationPair UnificationTriple Variant SmtResult ITraceStep ITrace . --- MAU-DEV
+    UnificationPair UnificationTriple Variant NarrowingResult SmtResult 
+    ITraceStep ITrace . --- MAU-DEV
   subsort TraceStep < Trace .
   subsort ITraceStep < ITrace . --- MAU-DEV
 
@@ -1980,10 +1981,11 @@ fmod META-LEVEL is
   op {_,_} : Substitution Nat -> UnificationPair [ctor] .
   op {_,_,_} : Substitution Substitution Nat -> UnificationTriple [ctor] .
   op {_,_,_,_,_} : Term Substitution Nat Parent Bool -> Variant [ctor] .
+  op {_,_,_,_,_,_,_,_} : Term Substitution Nat Parent Bool Context EquationSet Substitution -> Variant [ctor] . --- MAU-DEV
+  op {_,_,_,_,_,_} : Term Type Substitution Substitution Context Qid -> NarrowingResult [ctor format (d d d d d d d d d n d d d d)] .
   op {_,_,_} : Term Type Rule -> TraceStep [ctor] .
   op {_,_,_} : Equation Substitution Context -> ITraceStep [ctor format(n n d n d n n n)] . --- MAU-DEV
   op {_,_,_} : MembAx Substitution Context -> ITraceStep [ctor format(n n d n d n n n)] . --- MAU-DEV
-
   op nil : -> Trace [ctor] .
   op nil : -> ITrace [ctor] . --- MAU-DEV
   op __ : Trace Trace -> Trace [ctor assoc id: nil format (d n d)] .
@@ -1992,13 +1994,15 @@ fmod META-LEVEL is
 
 *** failure results
   sorts ResultPair? ResultTriple? Result4Tuple? MatchPair? Substitution? Trace?
-    UnificationPair? UnificationTriple? Variant? SmtResult? Term? . --- MAU-DEV
+    UnificationPair? UnificationTriple? Variant? NarrowingResult? SmtResult?
+    Term? . --- MAU-DEV
   subsort ResultPair < ResultPair? .
   subsort ResultTriple < ResultTriple? .
   subsort Result4Tuple < Result4Tuple? .
   subsort MatchPair < MatchPair? .
   subsort UnificationPair < UnificationPair? .
   subsort UnificationTriple < UnificationTriple? .
+  subsort NarrowingResult < NarrowingResult? .
   subsort Variant < Variant? .
   subsort Substitution < Substitution? .
   subsort Trace < Trace? .
@@ -2010,6 +2014,7 @@ fmod META-LEVEL is
   op failure : -> ResultPair? [ctor] .
 
   op failure : -> ResultTriple? [ctor] .
+  op failureIncomplete : -> ResultTriple? [ctor] .
   op failure : -> Result4Tuple? [ctor] .
   op noUnifier : -> UnificationPair? [ctor] .
   op noUnifier : -> UnificationTriple? [ctor] .
@@ -2017,6 +2022,8 @@ fmod META-LEVEL is
   op noUnifierIncomplete : -> UnificationTriple? [ctor] .
   op noVariant : -> Variant? [ctor] .
   op noVariantIncomplete : -> Variant? [ctor] .
+  op failure : -> NarrowingResult? [ctor] .
+  op failureIncomplete : -> NarrowingResult? [ctor] .
   op noMatch : -> Substitution? [ctor] .
   op noMatch : -> MatchPair? [ctor] .
   op failure : -> Trace? [ctor] .
@@ -2029,15 +2036,15 @@ fmod META-LEVEL is
   op getType : ResultPair -> Type .
   eq getType({T:Term, T:Type}) = T:Type .
 
-  --- BEGIN MAU-DEV ---
+  *** BEGIN MAU-DEV
   op getEquation : ITraceStep -> Equation .
   eq getEquation({E:Equation,S:Substitution,C:Context}) = E:Equation .
   op getSubstitution : ITraceStep -> Substitution .
   eq getSubstitution({E:Equation,S:Substitution,C:Context}) = S:Substitution .
   op getContext : ITraceStep -> Context .
   eq getContext({E:Equation,S:Substitution,C:Context}) = C:Context .
-  --- END MAU-DEV ---
-
+  *** END MAU-DEV
+  
   op getTerm : ResultTriple -> Term .
   eq getTerm({T:Term, T:Type, S:Substitution}) = T:Term .
   op getType : ResultTriple -> Type .
@@ -2058,6 +2065,19 @@ fmod META-LEVEL is
   eq getSubstitution({S:Substitution, C:Context}) = S:Substitution .
   op getContext : MatchPair -> Context .
   eq getContext({S:Substitution, C:Context}) = C:Context .
+
+  op getTerm : NarrowingResult -> Term .
+  eq getTerm({T:Term, T:Type, TS:Substitution, RS:Substitution, C:Context, V:Qid}) = T:Term .
+  op getType : NarrowingResult -> Type .
+  eq getType({T:Term, T:Type, TS:Substitution, RS:Substitution, C:Context, V:Qid}) = T:Type .
+  op getTermSubstitution : NarrowingResult -> Substitution .
+  eq getTermSubstitution({T:Term, T:Type, TS:Substitution, RS:Substitution, C:Context, V:Qid}) = TS:Substitution .
+  op getRuleSubstitution : NarrowingResult -> Substitution .
+  eq getRuleSubstitution({T:Term, T:Type, TS:Substitution, RS:Substitution, C:Context, V:Qid}) = RS:Substitution .
+  op getContext : NarrowingResult -> Context .
+  eq getContext({T:Term, T:Type, TS:Substitution, RS:Substitution, C:Context, V:Qid}) = C:Context .
+  op getVariableFamily : NarrowingResult -> Qid .
+  eq getVariableFamily({T:Term, T:Type, TS:Substitution, RS:Substitution, C:Context, V:Qid}) = V:Qid .
 
 *** descent functions
   op metaReduce : Module Term ~> ResultPair
@@ -2200,7 +2220,7 @@ fmod META-LEVEL is
                         MembAxSet EquationSet RuleSet ~> Module)
 
         op-hook sortMappingSymbol	(sort_to_. : Sort Sort ~> SortMapping [ctor] .)
-	op-hook emptySortMappingSetSymbol	(none : ~> SortMappingSet)
+        op-hook emptySortMappingSetSymbol	(none : ~> SortMappingSet)
         op-hook sortMappingSetSymbol
                 (__ : SortMappingSet SortMappingSet ~> SortMappingSet)
 
@@ -2208,47 +2228,42 @@ fmod META-LEVEL is
         op-hook opSpecificMappingSymbol	(op_:_->_to_. : Qid TypeList Type Qid ~> OpMapping)
         op-hook opTermMappingSymbol	(op_to`term_. : Term Term ~> OpMapping)
 
-	op-hook emptyOpMappingSetSymbol	(none : ~> OpMappingSet)
-        op-hook opMappingSetSymbol
-                (__ : OpMappingSet OpMappingSet ~> OpMappingSet)
+        op-hook emptyOpMappingSetSymbol	(none : ~> OpMappingSet)
+        op-hook opMappingSetSymbol (__ : OpMappingSet OpMappingSet ~> OpMappingSet)
 
-        op-hook viewSymbol
-                (view_from_to_is__endv : Header ModuleExpression ModuleExpression
-                 SortMappingSet OpMappingSet ~> View)
+        op-hook viewSymbol (view_from_to_is__endv : Header ModuleExpression ModuleExpression SortMappingSet OpMappingSet ~> View)
 
         op-hook anyTypeSymbol		(anyType : ~> Type?)
 
-	op-hook unificandPairSymbol	(_=?_ : Term Term ~> UnificandPair)
-        op-hook unificationConjunctionSymbol
-                (_/\_ : UnificationProblem UnificationProblem ~> UnificationProblem)
+        op-hook unificandPairSymbol	(_=?_ : Term Term ~> UnificandPair)
+        op-hook unificationConjunctionSymbol (_/\_ : UnificationProblem UnificationProblem ~> UnificationProblem)
 
         op-hook resultPairSymbol	({_,_} : Term Type ~> ResultPair)
-        op-hook resultTripleSymbol
-                ({_,_,_} : Term Type Substitution ~> ResultTriple)
-        op-hook result4TupleSymbol
-                ({_,_,_,_} : Term Type Substitution Context ~> Result4Tuple)
+        op-hook resultTripleSymbol ({_,_,_} : Term Type Substitution ~> ResultTriple)
+        op-hook result4TupleSymbol ({_,_,_,_} : Term Type Substitution Context ~> Result4Tuple)
         op-hook matchPairSymbol		({_,_} : Substitution Context ~> MatchPair)
         op-hook unificationPairSymbol	({_,_} : Substitution Nat ~> UnificationPair)
         op-hook unificationTripleSymbol	({_,_,_} : Substitution Substitution Nat ~> UnificationTriple)
         op-hook variantSymbol		({_,_,_,_,_} : Term Substitution Nat Parent Bool ~> Variant)
+        op-hook variantSymbolExt	({_,_,_,_,_,_,_,_} : Term Substitution Nat Parent Bool Context EquationSet Substitution ~> Variant) --- MAU-DEV
+        op-hook narrowingResultSymbol	({_,_,_,_,_,_} : Term Type Substitution Substitution Context Qid ~> NarrowingResult)
         op-hook smtResultSymbol		({_,_,_,_} : Term Substitution Term Nat ~> SmtResult)
 
         op-hook traceStepSymbol		({_,_,_} : Term Type Rule ~> TraceStep)
         op-hook nilTraceSymbol		(nil : ~> Trace)
         op-hook traceSymbol		(__ : Trace Trace ~> Trace)
-
-        --- BEGIN MAU-DEV ---
-        op-hook itraceStepSymbol            ({_,_,_} : Equation Substitution Context ~> ITraceStep)
-        op-hook nilITraceSymbol             (nil : ~> ITrace)
-        op-hook itraceSymbol                (__ : ITrace ITrace ~> ITrace)
+        
+        op-hook itraceStepSymbol            ({_,_,_} : Equation Substitution Context ~> ITraceStep) --- MAU-DEV
+        op-hook nilITraceSymbol             (nil : ~> ITrace) --- MAU-DEV
+        op-hook itraceSymbol                (__ : ITrace ITrace ~> ITrace) --- MAU-DEV
        
-        op-hook noIdentitySymbol            (noIdentity : ~> Term?)
-        --- END MAU-DEV ---
-
+        op-hook noIdentitySymbol            (noIdentity : ~> Term?) --- MAU-DEV
+        
         op-hook noParseSymbol		(noParse : Nat ~> ResultPair?)
         op-hook ambiguitySymbol		(ambiguity : ResultPair ResultPair ~> ResultPair?)
         op-hook failure2Symbol		(failure : ~> ResultPair?)
         op-hook failure3Symbol		(failure : ~> ResultTriple?)
+        op-hook failureIncomplete3Symbol	(failureIncomplete : ~> ResultTriple?)
         op-hook failure4Symbol		(failure : ~> Result4Tuple?)
         op-hook noUnifierPairSymbol	(noUnifier : ~> UnificationPair?)
         op-hook noUnifierTripleSymbol	(noUnifier : ~> UnificationTriple?)
@@ -2256,6 +2271,8 @@ fmod META-LEVEL is
         op-hook noUnifierIncompleteTripleSymbol	(noUnifierIncomplete : ~> UnificationTriple?)
         op-hook noVariantSymbol		(noVariant : ~> Variant?)
         op-hook noVariantIncompleteSymbol	(noVariantIncomplete : ~> Variant?)
+        op-hook narrowingFailureSymbol		(failure : ~> NarrowingResult?)
+        op-hook narrowingFailureIncompleteSymbol	(failureIncomplete : ~> NarrowingResult?)
         op-hook noMatchSubstSymbol	(noMatch : ~> Substitution?)
         op-hook noMatchPairSymbol	(noMatch : ~> MatchPair?)
         op-hook failureTraceSymbol	(failure : ~> Trace?)
@@ -2274,56 +2291,67 @@ fmod META-LEVEL is
         term-hook falseTerm		(false))] .
 
     --- BEGIN MAU-DEV ---
-    op metaAssociative : Module Term -> Bool
+    op metaAssociative : Module Term -> Bool --- MAU-DEV
         [special (
            id-hook MetaLevelOpSymbol        (metaAssociative)
            op-hook shareWith                (metaReduce : Module Term ~> ResultPair))] .
 
-    op metaCommutative : Module Term -> Bool
+    op metaCommutative : Module Term -> Bool --- MAU-DEV
         [special (
            id-hook MetaLevelOpSymbol        (metaCommutative)
            op-hook shareWith                (metaReduce : Module Term ~> ResultPair))] .
 
-    op metaConstructor : Module Term -> Bool
+    op metaConstructor : Module Term -> Bool --- MAU-DEV
         [special (
            id-hook MetaLevelOpSymbol        (metaConstructor)
            op-hook shareWith                (metaReduce : Module Term ~> ResultPair))] .
     
-    op metaIdentity : Module Term ~> Term?
+    op metaIdentity : Module Term ~> Term? --- MAU-DEV
         [special (
            id-hook MetaLevelOpSymbol        (metaIdentity)
            op-hook shareWith                (metaReduce : Module Term ~> ResultPair))] .
     
-    op metaRightIdentity : Module Term ~> Term?
+     op metaRightIdentity : Module Term ~> Term? --- MAU-DEV
         [special (
            id-hook MetaLevelOpSymbol        (metaRightIdentity)
            op-hook shareWith                (metaReduce : Module Term ~> ResultPair))] .
            
-    op metaLeftIdentity : Module Term ~> Term?
+     op metaLeftIdentity : Module Term ~> Term? --- MAU-DEV
         [special (
            id-hook MetaLevelOpSymbol        (metaLeftIdentity)
            op-hook shareWith                (metaReduce : Module Term ~> ResultPair))] .
 
-    op metaOutermost : Module Term -> TermList
+    op metaOutermost : Module Term -> TermList --- MAU-DEV
         [special (
            id-hook MetaLevelOpSymbol        (metaOutermost)
            op-hook shareWith                (metaReduce : Module Term ~> ResultPair))] .
     
-    op metaReducePath : Module Term Bool -> ITrace
+    op metaReducePath : Module Term Bool -> ITrace --- MAU-DEV
         [special (
            id-hook MetaLevelOpSymbol        (metaReducePath)
            op-hook shareWith                (metaReduce : Module Term ~> ResultPair))] .
   
-    op metaString : Module Term Bool -> String
+    op metaString : Module Term Bool -> String --- MAU-DEV
         [special (
            id-hook MetaLevelOpSymbol        (metaString)
            op-hook shareWith                (metaReduce : Module Term ~> ResultPair))] .
     
-    op metaMap : Module Term -> String
+    op metaMap : Module Term -> String --- MAU-DEV
         [special (
            id-hook MetaLevelOpSymbol        (metaMap)
            op-hook shareWith                (metaReduce : Module Term ~> ResultPair))] .
-	--- END MAU-DEV ---
+    
+    op metaGetVariantExt : Module Term TermList Nat Nat ~> Variant? --- MAU-DEV
+        [special (
+           id-hook MetaLevelOpSymbol	    (metaGetVariantExt)
+           op-hook shareWith		        (metaReduce : Module Term ~> ResultPair))] .
+
+    op metaGetIrredundantVariantExt : Module Term TermList Nat Nat ~> Variant? --- MAU-DEV
+        [special (
+           id-hook MetaLevelOpSymbol	    (metaGetIrredundantVariantExt)
+           op-hook shareWith		        (metaReduce : Module Term ~> ResultPair))] .
+    --- END MAU-DEV ---
+  
   op metaNormalize : Module Term ~> ResultPair
         [special (
            id-hook MetaLevelOpSymbol	(metaNormalize)
@@ -2407,6 +2435,11 @@ fmod META-LEVEL is
   op metaVariantDisjointUnify : Module UnificationProblem TermList Nat Nat ~> UnificationTriple?
         [special (
            id-hook MetaLevelOpSymbol	(metaVariantDisjointUnify)
+           op-hook shareWith		(metaReduce : Module Term ~> ResultPair))] .
+
+  op metaNarrowingApply : Module Term Qid TermList Qid Nat -> NarrowingResult?
+	[special (
+	   id-hook MetaLevelOpSymbol	(metaNarrowingApply)
            op-hook shareWith		(metaReduce : Module Term ~> ResultPair))] .
 
   op sortLeq : Module Type Type ~> Bool

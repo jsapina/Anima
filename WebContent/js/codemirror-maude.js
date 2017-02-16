@@ -204,7 +204,7 @@ CodeMirror.defineMode("maude", function(_config, modeConfig) {
       "rat", "decFloat",
       "true", "false", "if", "then", "else", "fi", "and", "or",
       "xor", "implies", "not",
-      "assoc", "comm", "id", "left-id", "right-id", "iter", "strat", "memo", "prec", "gather", "format", "ctor", "poly", "msg", "label", "owise", "print");
+      "assoc", "comm", "idem", "id", "left-id", "right-id", "iter", "strat", "memo", "prec", "gather", "format", "ctor", "poly", "msg", "label", "owise", "print", "variant");
 
     var override = modeConfig.overrideKeywords;
     if (override) for (var word in override) if (override.hasOwnProperty(word))
